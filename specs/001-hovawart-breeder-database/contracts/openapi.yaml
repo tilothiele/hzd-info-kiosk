@@ -1,0 +1,1350 @@
+openapi: 3.1.3
+info:
+  title: Hovawart-Züchterdatenbank API
+  description: API für die Hovawart-Züchterdatenbank mit öffentlicher Suchfunktion
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@hovawart-database.de
+
+servers:
+  - url: https://api.hovawart-database.de/v1
+    description: Production server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+paths:
+  # Public Search Endpoints
+  /dogs/search:
+    get:
+      summary: Öffentliche Hundesuche
+      description: Suche nach Hunden ohne Authentifizierung
+      tags:
+        - Public Search
+      parameters:
+        - name: name
+          in: query
+          description: Hundename (teilweise Übereinstimmung)
+          schema:
+            type: string
+        - name: gender
+          in: query
+          description: Geschlecht des Hundes
+          schema:
+            type: string
+            enum: [MALE, FEMALE]
+        - name: color
+          in: query
+          description: Farbe des Hundes
+          schema:
+            type: string
+        - name: minAge
+          in: query
+          description: Mindestalter in Jahren
+          schema:
+            type: integer
+            minimum: 0
+        - name: maxAge
+          in: query
+          description: Höchstalter in Jahren
+          schema:
+            type: integer
+            minimum: 0
+        - name: breeder
+          in: query
+          description: Züchtername
+          schema:
+            type: string
+        - name: studAvailable
+          in: query
+          description: Nur verfügbare Deckrüden
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Seitennummer
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Anzahl Ergebnisse pro Seite
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Suchergebnisse
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dogs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DogPublic'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  totalCount:
+                    type: integer
+        '400':
+          description: Ungültige Suchparameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /publicdogs/{id}:
+    get:
+      summary: Hundedetails abrufen
+      description: Öffentliche Hundedetails ohne Authentifizierung
+      tags:
+        - Public Search
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Hundedetails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DogPublic'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      summary: Benutzer registrieren
+      description: Neuen Benutzer registrieren
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: Benutzer erfolgreich registriert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Ungültige Registrierungsdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email bereits registriert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: Benutzer anmelden
+      description: Benutzer anmelden und JWT-Token erhalten
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Erfolgreiche Anmeldung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Ungültige Anmeldedaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Protected Dog Management Endpoints
+  /dogs:
+    get:
+      summary: Eigene Hunde abrufen
+      description: Alle Hunde des authentifizierten Benutzers abrufen
+      tags:
+        - Dog Management
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste der eigenen Hunde
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dog'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Neuen Hund erstellen
+      description: Neuen Hund für den authentifizierten Benutzer erstellen
+      tags:
+        - Dog Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DogCreate'
+      responses:
+        '201':
+          description: Hund erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '400':
+          description: Ungültige Hundedaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /dogs/{id}:
+    get:
+      summary: Hundedetails abrufen
+      description: Detaillierte Informationen zu einem Hund (nur für Besitzer)
+      tags:
+        - Dog Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Hundedetails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Hund aktualisieren
+      description: Hundedaten aktualisieren (nur für Besitzer)
+      tags:
+        - Dog Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DogUpdate'
+      responses:
+        '200':
+          description: Hund erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dog'
+        '400':
+          description: Ungültige Aktualisierungsdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Hund löschen
+      description: Hund löschen (nur für Besitzer)
+      tags:
+        - Dog Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Hund erfolgreich gelöscht
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Data Import Endpoints
+  /import/dogs:
+    post:
+      summary: Hundedaten importieren
+      description: Import von Hundedaten aus Legacy-Systemen über JSON-Objekt
+      tags:
+        - Data Import
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DogImport'
+      responses:
+        '201':
+          description: Hund erfolgreich importiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          description: Ungültige Importdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung für Import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /import/dogs/batch:
+    post:
+      summary: Batch-Import von Hundedaten
+      description: Import mehrerer Hunde in einem Request
+      tags:
+        - Data Import
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dogs:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DogImport'
+                  maxItems: 100
+      responses:
+        '201':
+          description: Hunde erfolgreich importiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchImportResult'
+        '400':
+          description: Ungültige Importdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung für Import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Health Records Endpoints
+  /dogs/{id}/health-records:
+    get:
+      summary: Gesundheitsdaten abrufen
+      description: Alle Gesundheitsdaten eines Hundes abrufen
+      tags:
+        - Health Records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste der Gesundheitsdaten
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthRecord'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Gesundheitsdaten hinzufügen
+      description: Neue Gesundheitsdaten für einen Hund hinzufügen
+      tags:
+        - Health Records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Hund-ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthRecordCreate'
+      responses:
+        '201':
+          description: Gesundheitsdaten erfolgreich hinzugefügt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecord'
+        '400':
+          description: Ungültige Gesundheitsdaten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Keine Berechtigung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Hund nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Stud Services Endpoints
+  /stud-services:
+    get:
+      summary: Verfügbare Deckdienste abrufen
+      description: Alle verfügbaren Deckdienste abrufen
+      tags:
+        - Stud Services
+      parameters:
+        - name: available
+          in: query
+          description: Nur verfügbare Deckdienste
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          description: Seitennummer
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Anzahl Ergebnisse pro Seite
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Liste der Deckdienste
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  studServices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StudService'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  totalCount:
+                    type: integer
+
+    post:
+      summary: Deckdienst erstellen
+      description: Neuen Deckdienst für einen Deckrüden erstellen
+      tags:
+        - Stud Services
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudServiceCreate'
+      responses:
+        '201':
+          description: Deckdienst erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudService'
+        '400':
+          description: Ungültige Deckdienst-Daten
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # User Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [BREEDER, STUD_OWNER, ADMIN, MEMBER, EDITOR]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserRegistration:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [BREEDER, STUD_OWNER, MEMBER, EDITOR]
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+        expiresIn:
+          type: integer
+
+    # Dog Schemas
+    Dog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        birthDate:
+          type: string
+          format: date
+        deathDate:
+          type: string
+          format: date
+          description: Todesdatum des Hundes (optional)
+        color:
+          type: string
+        microchipId:
+          type: string
+        pedigreeNumber:
+          type: string
+        isStudAvailable:
+          type: boolean
+        isActive:
+          type: boolean
+        description:
+          type: string
+        motherId:
+          type: string
+          format: uuid
+        fatherId:
+          type: string
+          format: uuid
+        litterNumber:
+          type: string
+          maxLength: 10
+          description: Wurfnummer (z.B. "A", "B", "C" oder "1", "2", "3")
+        owner:
+          $ref: '#/components/schemas/User'
+        mother:
+          $ref: '#/components/schemas/Dog'
+        father:
+          $ref: '#/components/schemas/Dog'
+        offspring:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dog'
+        healthRecords:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthRecord'
+        medicalFindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalFinding'
+        awards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Award'
+        geneticTests:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneticTest'
+        studServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudService'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DogPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        birthDate:
+          type: string
+          format: date
+        color:
+          type: string
+        isStudAvailable:
+          type: boolean
+        description:
+          type: string
+        owner:
+          type: object
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+            phone:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    DogCreate:
+      type: object
+      required:
+        - name
+        - gender
+        - birthDate
+        - color
+      properties:
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        birthDate:
+          type: string
+          format: date
+        deathDate:
+          type: string
+          format: date
+          description: Todesdatum des Hundes (optional)
+        color:
+          type: string
+        microchipId:
+          type: string
+        pedigreeNumber:
+          type: string
+        isStudAvailable:
+          type: boolean
+          default: false
+        description:
+          type: string
+        litterNumber:
+          type: string
+          maxLength: 10
+          description: Wurfnummer (z.B. "A", "B", "C" oder "1", "2", "3")
+
+    DogUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        birthDate:
+          type: string
+          format: date
+        deathDate:
+          type: string
+          format: date
+          description: Todesdatum des Hundes (optional)
+        color:
+          type: string
+        microchipId:
+          type: string
+        pedigreeNumber:
+          type: string
+        isStudAvailable:
+          type: boolean
+        description:
+          type: string
+        litterNumber:
+          type: string
+          maxLength: 10
+          description: Wurfnummer (z.B. "A", "B", "C" oder "1", "2", "3")
+
+    # Health Record Schemas
+    HealthRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dogId:
+          type: string
+          format: uuid
+        recordType:
+          type: string
+          enum: [VACCINATION, HEALTH_CHECK, GENETIC_TEST, OTHER]
+        title:
+          type: string
+        description:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        veterinarian:
+          type: string
+        documentUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HealthRecordCreate:
+      type: object
+      required:
+        - recordType
+        - title
+        - recordDate
+      properties:
+        recordType:
+          type: string
+          enum: [VACCINATION, HEALTH_CHECK, GENETIC_TEST, OTHER]
+        title:
+          type: string
+        description:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        veterinarian:
+          type: string
+        documentUrl:
+          type: string
+
+    # Medical Finding Schemas
+    MedicalFinding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dogId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        shortDescription:
+          type: string
+        remarks:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Award Schemas
+    Award:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dogId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        issuer:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Genetic Test Schemas
+    GeneticTest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dogId:
+          type: string
+          format: uuid
+        testType:
+          type: string
+          enum: [HD, ED, PRA, DM, VWD, OTHER]
+        testDate:
+          type: string
+          format: date
+        result:
+          type: string
+          enum: [NORMAL, CARRIER, AFFECTED, UNKNOWN]
+        laboratory:
+          type: string
+        certificateNumber:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Stud Service Schemas
+    StudService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        studDogId:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        isAvailable:
+          type: boolean
+        price:
+          type: number
+          format: decimal
+        description:
+          type: string
+        contactInfo:
+          type: string
+        location:
+          type: string
+        studDog:
+          $ref: '#/components/schemas/Dog'
+        owner:
+          $ref: '#/components/schemas/User'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StudServiceCreate:
+      type: object
+      required:
+        - studDogId
+        - contactInfo
+      properties:
+        studDogId:
+          type: string
+          format: uuid
+        isAvailable:
+          type: boolean
+          default: true
+        price:
+          type: number
+          format: decimal
+        description:
+          type: string
+        contactInfo:
+          type: string
+        location:
+          type: string
+
+    # Import Schemas
+    DogImport:
+      type: object
+      required:
+        - name
+        - gender
+        - birthDate
+        - color
+      properties:
+        # Grunddaten
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        birthDate:
+          type: string
+          format: date
+        color:
+          type: string
+        microchipId:
+          type: string
+        pedigreeNumber:
+          type: string
+        isStudAvailable:
+          type: boolean
+          default: false
+        description:
+          type: string
+
+        # Elternverweise (Legacy-IDs)
+        motherId:
+          type: string
+          description: Legacy-ID der Mutter
+        fatherId:
+          type: string
+          description: Legacy-ID des Vaters
+
+        # Gesundheitsdaten
+        healthRecords:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthRecordImport'
+
+        # Medizinische Befunde
+        medicalFindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalFindingImport'
+
+        # Auszeichnungen
+        awards:
+          type: array
+          items:
+            $ref: '#/components/schemas/AwardImport'
+
+        # Genetische Tests
+        geneticTests:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneticTestImport'
+
+        # Legacy-Metadaten
+        legacyId:
+          type: string
+          description: Original-ID aus dem Legacy-System
+        importSource:
+          type: string
+          description: Quelle des Imports (z.B. "old_database", "excel_export")
+        importDate:
+          type: string
+          format: date-time
+          description: Datum des Imports
+
+    HealthRecordImport:
+      type: object
+      required:
+        - recordType
+        - title
+        - recordDate
+      properties:
+        recordType:
+          type: string
+          enum: [VACCINATION, HEALTH_CHECK, GENETIC_TEST, OTHER]
+        title:
+          type: string
+        description:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        veterinarian:
+          type: string
+        documentUrl:
+          type: string
+        legacyId:
+          type: string
+
+    MedicalFindingImport:
+      type: object
+      required:
+        - date
+        - shortDescription
+      properties:
+        date:
+          type: string
+          format: date
+        shortDescription:
+          type: string
+          maxLength: 100
+        remarks:
+          type: string
+        legacyId:
+          type: string
+
+    AwardImport:
+      type: object
+      required:
+        - code
+        - description
+        - issuer
+      properties:
+        code:
+          type: string
+          maxLength: 50
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 100
+        legacyId:
+          type: string
+
+    GeneticTestImport:
+      type: object
+      required:
+        - testType
+        - testDate
+        - result
+        - laboratory
+      properties:
+        testType:
+          type: string
+          enum: [HD, ED, PRA, DM, VWD, OTHER]
+        testDate:
+          type: string
+          format: date
+        result:
+          type: string
+          enum: [NORMAL, CARRIER, AFFECTED, UNKNOWN]
+        laboratory:
+          type: string
+          maxLength: 100
+        certificateNumber:
+          type: string
+          maxLength: 50
+        notes:
+          type: string
+        legacyId:
+          type: string
+
+    ImportResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        dogId:
+          type: string
+          format: uuid
+        legacyId:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+        importedRecords:
+          type: object
+          properties:
+            healthRecords:
+              type: integer
+            medicalFindings:
+              type: integer
+            awards:
+              type: integer
+            geneticTests:
+              type: integer
+
+    BatchImportResult:
+      type: object
+      properties:
+        totalProcessed:
+          type: integer
+        successful:
+          type: integer
+        failed:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportResult'
+        summary:
+          type: object
+          properties:
+            totalHealthRecords:
+              type: integer
+            totalMedicalFindings:
+              type: integer
+            totalAwards:
+              type: integer
+            totalGeneticTests:
+              type: integer
+
+    # Common Schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
