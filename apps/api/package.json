@@ -20,26 +20,19 @@
     "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
     "joi": "^17.11.0",
-    "winston": "^3.10.0",
-    "@prisma/client": "^4.16.2",
-    "@hovawart-db/shared": "file:../../packages/shared"
+    "winston": "^3.10.0"
   },
   "devDependencies": {
-    "@types/node": "^20.8.0",
+    "@types/node": "^18.19.0",
     "@types/express": "^4.17.17",
     "@types/cors": "^2.8.13",
     "@types/morgan": "^1.9.4",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/bcryptjs": "^2.4.2",
-    "typescript": "^5.2.2",
-    "tsx": "^4.8.1",
+    "typescript": "^4.9.5",
+    "tsx": "^3.14.0",
     "eslint": "^8.50.0",
-    "@typescript-eslint/eslint-plugin": "^6.7.0",
-    "@typescript-eslint/parser": "^6.7.0",
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.5",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^2.0.12"
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0"
   }
 }

@@ -14,16 +14,15 @@
     "clean": "rm -rf node_modules/.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^4.16.2",
-    "@hovawart-db/shared": "file:../../packages/shared"
+    "@prisma/client": "^4.16.2"
   },
   "devDependencies": {
-    "@types/node": "^20.8.0",
+    "@types/node": "^18.19.0",
     "prisma": "^4.16.2",
-    "typescript": "^5.2.2",
-    "tsx": "^4.8.1",
+    "typescript": "^4.9.5",
+    "tsx": "^3.14.0",
     "eslint": "^8.50.0",
-    "@typescript-eslint/eslint-plugin": "^6.7.0",
-    "@typescript-eslint/parser": "^6.7.0"
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0"
   }
 }
