@@ -14,6 +14,9 @@ export interface User {
   isActive: boolean
   createdAt: Date
   updatedAt: Date
+  dogs?: Dog[]
+  studServices?: StudService[]
+  litters?: Litter[]
   userRoles: UserRole[]
 }
 
@@ -49,7 +52,12 @@ export interface Dog {
   owner?: User
   mother?: Dog
   father?: Dog
-  offspring?: Dog[]
+  offspringAsMother?: Dog[]
+  offspringAsFather?: Dog[]
+  littersAsMother?: Litter[]
+  littersAsFather?: Litter[]
+  litter?: Litter
+  litterId?: string
   healthRecords?: HealthRecord[]
   medicalFindings?: MedicalFinding[]
   awards?: Award[]
@@ -124,6 +132,31 @@ export interface StudService {
   owner?: User
 }
 
+export interface Litter {
+  id: string
+  motherId: string
+  fatherId?: string
+  breederId: string
+  litterNumber: string
+  plannedDate?: Date
+  expectedDate?: Date
+  actualDate?: Date
+  status: LitterStatus
+  expectedPuppies?: number
+  actualPuppies?: number
+  description?: string
+  isPublic: boolean
+  contactInfo?: string
+  price?: number
+  location?: string
+  createdAt: Date
+  updatedAt: Date
+  mother?: Dog
+  father?: Dog
+  breeder?: User
+  puppies?: Dog[]
+}
+
 // Enums
 export enum Gender {
   MALE = 'MALE',
@@ -159,6 +192,16 @@ export enum GeneticTestResult {
   CARRIER = 'CARRIER',
   AFFECTED = 'AFFECTED',
   UNKNOWN = 'UNKNOWN'
+}
+
+export enum LitterStatus {
+  PLANNED = 'PLANNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  BORN = 'BORN',
+  AVAILABLE = 'AVAILABLE',
+  RESERVED = 'RESERVED',
+  SOLD = 'SOLD',
+  CANCELLED = 'CANCELLED'
 }
 
 // API Response types

@@ -1,15 +1,28 @@
 # Setup Guide: Hovawart-Züchterdatenbank
 
-## Problem mit Dependencies
+## Probleme gelöst ✅
 
-Das aktuelle Setup hat Probleme mit der Node.js Version (v15.3.0) und den Dependencies. Hier sind die Lösungsansätze:
+**Dependencies:** ERESOLVE-Fehler behoben durch vereinfachte Versionen
+**Prisma Schema:** Namenskonflikte und Relationen korrigiert
+**DATABASE_URL:** Setup-Anleitung erstellt
 
-## Option 1: Node.js Version aktualisieren (Empfohlen)
+## Aktuelle Probleme
+
+Das aktuelle Setup hat noch ein Problem mit der DATABASE_URL. Hier sind die Lösungsansätze:
+
+## Option 1: DATABASE_URL konfigurieren (Empfohlen)
 
 ```bash
-# Node.js auf Version 18+ aktualisieren
-# Dann:
+# 1. Erstelle .env Datei
+cd apps/database
+echo 'DATABASE_URL="postgresql://postgres:password@localhost:5432/hovawart_db?schema=public"' > .env
+
+# 2. Oder verwende SQLite für Entwicklung
+cp prisma/schema.sqlite.prisma prisma/schema.prisma
+
+# 3. Dann:
 npm install
+npx prisma migrate dev --name init
 ```
 
 ## Option 2: Vereinfachtes Setup ohne Workspaces
@@ -84,7 +97,7 @@ docker run -it hovawart-db
 ```
 apps/
 ├── web/          # Next.js Frontend
-├── api/          # Express.js Backend  
+├── api/          # Express.js Backend
 └── database/     # Prisma Database
 
 packages/

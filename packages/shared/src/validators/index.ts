@@ -171,6 +171,40 @@ export const updateStudServiceSchema = z.object({
   location: z.string().optional()
 })
 
+// Litter validation schemas
+export const createLitterSchema = z.object({
+  motherId: uuidSchema,
+  fatherId: uuidSchema.optional(),
+  litterNumber: z.string().min(1, 'Wurfnummer ist erforderlich').max(10, 'Wurfnummer darf maximal 10 Zeichen haben'),
+  plannedDate: z.date().optional(),
+  expectedDate: z.date().optional(),
+  actualDate: z.date().optional(),
+  status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).default('PLANNED'),
+  expectedPuppies: z.number().positive().optional(),
+  actualPuppies: z.number().positive().optional(),
+  description: z.string().optional(),
+  isPublic: z.boolean().default(true),
+  contactInfo: z.string().optional(),
+  price: z.number().positive().optional(),
+  location: z.string().optional()
+})
+
+export const updateLitterSchema = z.object({
+  fatherId: uuidSchema.optional(),
+  litterNumber: z.string().min(1).max(10).optional(),
+  plannedDate: z.date().optional(),
+  expectedDate: z.date().optional(),
+  actualDate: z.date().optional(),
+  status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).optional(),
+  expectedPuppies: z.number().positive().optional(),
+  actualPuppies: z.number().positive().optional(),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  contactInfo: z.string().optional(),
+  price: z.number().positive().optional(),
+  location: z.string().optional()
+})
+
 // Search and filter validation schemas
 export const dogSearchSchema = z.object({
   name: z.string().optional(),
@@ -233,6 +267,8 @@ export type CreateGeneticTestInput = z.infer<typeof createGeneticTestSchema>
 export type UpdateGeneticTestInput = z.infer<typeof updateGeneticTestSchema>
 export type CreateStudServiceInput = z.infer<typeof createStudServiceSchema>
 export type UpdateStudServiceInput = z.infer<typeof updateStudServiceSchema>
+export type CreateLitterInput = z.infer<typeof createLitterSchema>
+export type UpdateLitterInput = z.infer<typeof updateLitterSchema>
 export type DogSearchInput = z.infer<typeof dogSearchSchema>
 export type UserSearchInput = z.infer<typeof userSearchSchema>
 export type DogImportInput = z.infer<typeof dogImportSchema>
