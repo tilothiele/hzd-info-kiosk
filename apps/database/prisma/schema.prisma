@@ -61,7 +61,7 @@ model UserRole {
 model Dog {
   id             String   @id @default(uuid())
   name           String
-  gender         String   // MALE, FEMALE
+  gender         String   // R, H
   birthDate      DateTime
   deathDate      DateTime?
   color          String

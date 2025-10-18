@@ -3,7 +3,7 @@ export const dogs = [
 	{
 		id: 1,
 		name: 'Sofia aus dem Harz',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2023-10-21',
 		color: 'Schwarzmarken',
 		owner: 'Michael Becker',
@@ -24,7 +24,7 @@ export const dogs = [
 	{
 		id: 2,
 		name: 'Balu vom Neckar',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2022-05-08',
 		color: 'Schwarzmarken',
 		owner: 'Petra Klein',
@@ -45,7 +45,7 @@ export const dogs = [
 	{
 		id: 3,
 		name: 'Finn aus dem Sauerland',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2018-03-26',
 		color: 'Schwarzmarken',
 		owner: 'Peter Weber',
@@ -65,7 +65,7 @@ export const dogs = [
 	{
 		id: 4,
 		name: 'Theo von der Donau',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2016-06-03',
 		color: 'Schwarz',
 		owner: 'Anna Schmidt',
@@ -86,7 +86,7 @@ export const dogs = [
 	{
 		id: 5,
 		name: 'Bruno aus dem Thüringer Wald',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2017-02-02',
 		color: 'Schwarzmarken',
 		owner: 'Jens Lehmann',
@@ -106,7 +106,7 @@ export const dogs = [
 	{
 		id: 6,
 		name: 'Mira vom Schwarzen Wald',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2019-10-19',
 		color: 'Schwarz',
 		owner: 'Petra Klein',
@@ -126,7 +126,7 @@ export const dogs = [
 	{
 		id: 7,
 		name: 'Anton vom Rhein',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2018-07-25',
 		color: 'Blond',
 		owner: 'Birgit Neumann',
@@ -147,7 +147,7 @@ export const dogs = [
 	{
 		id: 8,
 		name: 'Hannah aus dem Taunus',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2015-03-20',
 		color: 'Schwarz',
 		owner: 'Jens Lehmann',
@@ -167,7 +167,7 @@ export const dogs = [
 	{
 		id: 9,
 		name: 'Rex aus dem Sauerland',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2022-05-11',
 		color: 'Blond',
 		owner: 'Maria Fischer',
@@ -187,7 +187,7 @@ export const dogs = [
 	{
 		id: 10,
 		name: 'Luna aus dem Sauerland',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2022-08-25',
 		color: 'Blond',
 		owner: 'Susanne Braun',
@@ -208,7 +208,7 @@ export const dogs = [
 	{
 		id: 11,
 		name: 'Max vom Bodensee',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2021-04-15',
 		color: 'Schwarzmarken',
 		owner: 'Thomas Müller',
@@ -228,7 +228,7 @@ export const dogs = [
 	{
 		id: 12,
 		name: 'Emma aus dem Harz',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2020-09-12',
 		color: 'Schwarz',
 		owner: 'Sabine Wagner',
@@ -248,7 +248,7 @@ export const dogs = [
 	{
 		id: 13,
 		name: 'Bella vom Rhein',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2019-12-03',
 		color: 'Blond',
 		owner: 'Klaus Hoffmann',
@@ -268,7 +268,7 @@ export const dogs = [
 	{
 		id: 14,
 		name: 'Rocky aus dem Schwarzwald',
-		gender: 'Männlich',
+		gender: 'R',
 		birthDate: '2018-06-18',
 		color: 'Schwarzmarken',
 		owner: 'Monika Schulz',
@@ -288,7 +288,7 @@ export const dogs = [
 	{
 		id: 15,
 		name: 'Luna vom Spreewald',
-		gender: 'Weiblich',
+		gender: 'H',
 		birthDate: '2021-01-30',
 		color: 'Schwarz',
 		owner: 'Andreas Richter',

@@ -159,8 +159,8 @@ export interface Litter {
 
 // Enums
 export enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE'
+  R = 'R',
+  H = 'H'
 }
 
 export enum UserRoleType {

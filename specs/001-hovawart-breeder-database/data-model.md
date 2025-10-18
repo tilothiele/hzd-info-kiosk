@@ -75,7 +75,7 @@
 **Fields**:
 - `id`: UUID (Primary Key)
 - `name`: String (Required)
-- `gender`: Enum (MALE, FEMALE)
+- `gender`: Enum (R, H)
 - `birthDate`: Date (Required)
 - `deathDate`: Date (Optional)
 - `color`: String (Required)
@@ -824,8 +824,8 @@ SELECT * FROM family_tree ORDER BY level, name;
 ### Validierungsregeln
 
 **Geschlechtsvalidierung:**
-- Mutter (`motherId`) muss `gender = FEMALE` haben
-- Vater (`fatherId`) muss `gender = MALE` haben
+- Mutter (`motherId`) muss `gender = H` haben
+- Vater (`fatherId`) muss `gender = R` haben
 
 **Zeitliche Validierung:**
 - Mutter muss vor dem Hund geboren worden sein
@@ -935,7 +935,7 @@ SELECT d.name as hündin,
        AVG(YEAR(CURDATE()) - YEAR(o.birthDate)) as durchschnittsalter
 FROM dogs d
 JOIN dogs o ON d.id = o.motherId
-WHERE d.gender = 'FEMALE'
+WHERE d.gender = 'H'
   AND d.litterNumber IS NOT NULL
 GROUP BY d.id, d.litterNumber
 ORDER BY d.name, d.litterNumber;
@@ -950,7 +950,7 @@ SELECT d.name as hündin,
        DATEDIFF(o.birthDate, LAG(o.birthDate) OVER (PARTITION BY d.id ORDER BY d.litterNumber)) as pauseInTagen
 FROM dogs d
 JOIN dogs o ON d.id = o.motherId
-WHERE d.gender = 'FEMALE'
+WHERE d.gender = 'H'
   AND d.litterNumber IS NOT NULL
 ORDER BY d.name, d.litterNumber;
 ```
@@ -979,7 +979,7 @@ ORDER BY d.name, d.litterNumber;
 {
   "id": "luna-uuid",
   "name": "Luna",
-  "gender": "FEMALE",
+  "gender": "H",
   "offspring": [
     {
       "id": "max-a-uuid",
@@ -1545,7 +1545,7 @@ FROM dogs d
 JOIN genetic_tests gt ON d.id = gt.dogId
 WHERE gt.testType = 'HD'
   AND gt.result IN ('NORMAL', 'CARRIER')
-  AND d.gender = 'MALE'  -- Für Deckrüden
+  AND d.gender = 'R'  -- Für Deckrüden
 ORDER BY d.name;
 ```
 
@@ -1755,7 +1755,7 @@ GROUP BY dog1, dog2;
 ```json
 {
   "name": "Max von Beispiel",
-  "gender": "MALE",
+  "gender": "R",
   "birthDate": "2020-05-15",
   "color": "Schwarzmarken",
   "microchipId": "123456789012345",

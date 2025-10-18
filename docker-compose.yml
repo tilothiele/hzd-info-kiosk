@@ -1,50 +1,147 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: hzd-postgres
-    restart: unless-stopped
+    container_name: hovawart-postgres
     environment:
-      POSTGRES_DB: hzd_info_kiosk
+      POSTGRES_DB: hovawart_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: hzd_password_2024
+      POSTGRES_PASSWORD: password
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - hzd-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d hzd_info_kiosk"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: hzd-pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@hzd.local
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "8081:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
     networks:
-      - hzd-network
+      - hovawart-network
+
+  # Redis für Caching
+  redis:
+    image: redis:7-alpine
+    container_name: hovawart-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hovawart-network
+
+  # Database Migration
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    container_name: hovawart-migrate
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/hovawart_db?schema=public"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - hovawart-network
+    profiles:
+      - migration
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: hovawart-api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/hovawart_db?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: "your-jwt-secret-here"
+      PORT: 3001
+    ports:
+      - "3003:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hovawart-network
+
+  # Web Frontend
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    container_name: hovawart-web
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: "http://localhost:3003"
+      PORT: 3000
+    ports:
+      - "3004:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - hovawart-network
+
+  # Development Environment
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: hovawart-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/hovawart_db?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: "dev-jwt-secret"
+    ports:
+      - "3000:3000"
+      - "3002:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hovawart-network
+    profiles:
+      - development
 
 volumes:
   postgres_data:
     driver: local
-  pgadmin_data:
+  redis_data:
     driver: local
 
 networks:
-  hzd-network:
+  hovawart-network:
     driver: bridge

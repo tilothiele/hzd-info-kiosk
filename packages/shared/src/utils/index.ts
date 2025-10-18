@@ -235,12 +235,24 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 /**
- * Format date for display
+ * Format date for display in German format (d.M.yyyy)
+ * @param date Date to format
+ * @returns Formatted date string (e.g. "15.5.2023")
+ */
+export function formatDate(date: Date): string {
+  const day = date.getDate()
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+  return `${day}.${month}.${year}`
+}
+
+/**
+ * Format date for display with full month name
  * @param date Date to format
  * @param locale Locale for formatting (default: 'de-DE')
  * @returns Formatted date string
  */
-export function formatDate(date: Date, locale: string = 'de-DE'): string {
+export function formatDateLong(date: Date, locale: string = 'de-DE'): string {
   return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'long',
@@ -352,4 +364,31 @@ export function generateSlug(text: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim()
+}
+
+/**
+ * Get display text for gender value
+ * @param gender Gender value (R or H)
+ * @returns Display text (Rüde or Hündin)
+ */
+export function getGenderDisplay(gender: string): string {
+  switch (gender) {
+    case 'R':
+      return 'Rüde'
+    case 'H':
+      return 'Hündin'
+    default:
+      return gender
+  }
+}
+
+/**
+ * Get gender options for forms
+ * @returns Array of gender options with value and label
+ */
+export function getGenderOptions(): Array<{ value: string; label: string }> {
+  return [
+    { value: 'R', label: 'Rüde' },
+    { value: 'H', label: 'Hündin' }
+  ]
 }

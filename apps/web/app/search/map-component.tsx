@@ -3,6 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { useEffect } from 'react'
+import { formatDate } from '@hovawart-db/shared'
 
 // Fix für Leaflet Icons
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -79,7 +80,7 @@ export default function MapComponent({ dogs }: MapComponentProps) {
 									<div className="space-y-1 text-sm">
 										<p><strong>Besitzer:</strong> {dog.owner}</p>
 										<p><strong>Standort:</strong> {dog.location}</p>
-										<p><strong>Geburtsdatum:</strong> {dog.birthDate}</p>
+										<p><strong>Geburtsdatum:</strong> {formatDate(new Date(dog.birthDate))}</p>
 										<p><strong>Geschlecht:</strong> {dog.gender}</p>
 										<p><strong>Farbe:</strong> {dog.color}</p>
 										<p><strong>Zuchtbuch:</strong> {dog.pedigreeNumber}</p>

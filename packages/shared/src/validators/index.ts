@@ -44,7 +44,7 @@ export const loginSchema = z.object({
 // Dog validation schemas
 export const createDogSchema = z.object({
   name: z.string().min(1, 'Name ist erforderlich'),
-  gender: z.enum(['MALE', 'FEMALE']),
+  gender: z.enum(['R', 'H']),
   birthDate: z.date().max(new Date(), 'Geburtsdatum darf nicht in der Zukunft liegen'),
   deathDate: z.date().max(new Date(), 'Todesdatum darf nicht in der Zukunft liegen').optional(),
   color: z.string().min(1, 'Farbe ist erforderlich'),
@@ -67,7 +67,7 @@ export const createDogSchema = z.object({
 
 export const updateDogSchema = z.object({
   name: z.string().min(1).optional(),
-  gender: z.enum(['MALE', 'FEMALE']).optional(),
+  gender: z.enum(['R', 'H']).optional(),
   birthDate: z.date().max(new Date()).optional(),
   deathDate: z.date().max(new Date()).optional(),
   color: z.string().min(1).optional(),
@@ -208,7 +208,7 @@ export const updateLitterSchema = z.object({
 // Search and filter validation schemas
 export const dogSearchSchema = z.object({
   name: z.string().optional(),
-  gender: z.enum(['MALE', 'FEMALE']).optional(),
+  gender: z.enum(['R', 'H']).optional(),
   color: z.string().optional(),
   ownerId: uuidSchema.optional(),
   isStudAvailable: z.boolean().optional(),
@@ -234,7 +234,7 @@ export const userSearchSchema = z.object({
 export const dogImportSchema = z.object({
   legacyId: z.string().min(1, 'Legacy ID ist erforderlich'),
   name: z.string().min(1),
-  gender: z.enum(['MALE', 'FEMALE']),
+  gender: z.enum(['R', 'H']),
   birthDate: z.date(),
   deathDate: z.date().optional(),
   color: z.string().min(1),

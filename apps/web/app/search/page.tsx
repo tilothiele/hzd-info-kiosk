@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { allDogs } from './dog-data'
-import { 
+import { getGenderDisplay, formatDate } from '@hovawart-db/shared'
+import {
 	MagnifyingGlassIcon,
 	FunnelIcon,
 	MapIcon,
@@ -16,7 +17,7 @@ import {
 	MapPinIcon,
 	ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
-import { 
+import {
 	HeartIcon as HeartSolidIcon,
 	UserIcon as UserSolidIcon,
 } from '@heroicons/react/24/solid'
@@ -180,11 +181,15 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 								<p style="margin: 2px 0;"><strong>Besitzer:</strong> ${dog.owner}</p>
 								<p style="margin: 2px 0;"><strong>Standort:</strong> ${dog.location}</p>
 								<p style="margin: 2px 0;"><strong>PLZ:</strong> ${dog.plz}</p>
-								<p style="margin: 2px 0;"><strong>Geburtsdatum:</strong> ${dog.birthDate}</p>
-								<p style="margin: 2px 0;"><strong>Geschlecht:</strong> ${dog.gender}</p>
+								<p style="margin: 2px 0;"><strong>Geburtsdatum:</strong> ${formatDate(new Date(dog.birthDate))}</p>
+								<p style="margin: 2px 0;"><strong>Geschlecht:</strong> ${getGenderDisplay(dog.gender)}</p>
 								<p style="margin: 2px 0;"><strong>Farbe:</strong> ${dog.color}</p>
 								<p style="margin: 2px 0;"><strong>Zuchtbuch:</strong> ${dog.pedigreeNumber}</p>
-								${dog.isStudAvailable ? '<p style="margin: 2px 0; color: green; font-weight: bold;">✓ Deckrüde verfügbar</p>' : ''}
+								${(() => {
+									const dogType = getDogType(dog)
+									if (!dogType) return ''
+									return `<p style="margin: 2px 0; color: ${dogType.color === 'green' ? 'green' : 'purple'}; font-weight: bold;">${dogType.icon} ${dogType.label}</p>`
+								})()}
 								<div style="margin-top: 8px;">
 									<button style="background: #2563eb; color: white; border: none; padding: 4px 8px; margin-right: 4px; border-radius: 4px; cursor: pointer;">Details</button>
 									<button style="background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Kontakt</button>
@@ -223,7 +228,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 
 	if (!isClient) { // Conditional rendering for hydration fix
 		return (
-			<div 
+			<div
 				className="h-96 w-full bg-gray-100 flex items-center justify-center"
 				style={{ minHeight: '384px' }}
 			>
@@ -236,8 +241,8 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 	}
 
 	return (
-		<div 
-			ref={mapRef} 
+		<div
+			ref={mapRef}
 			className="h-96 w-full bg-gray-100 flex items-center justify-center"
 			style={{ minHeight: '384px' }}
 		>
@@ -254,11 +259,31 @@ interface SearchFilters {
 	gender: string
 	color: string
 	stud: string
+	owner: string
 	healthTests: boolean
 }
 
 // Verwende die importierten Hundedaten
 const dogs = allDogs
+
+// Extrahiere alle eindeutigen Besitzer
+const uniqueOwners = Array.from(new Set(dogs.map(dog => dog.owner))).sort()
+
+// Funktion zur Bestimmung des Hundetyps
+const getDogType = (dog: any) => {
+	if (dog.isStudAvailable) {
+		return { type: 'stud', label: 'Deckrüde', color: 'green', icon: '♂' }
+	}
+	// Für Zuchthündinnen: weibliche Hunde, die potenziell für die Zucht geeignet sind
+	// (hier vereinfacht: alle Hündinnen über 2 Jahren)
+	if (dog.gender === 'H') {
+		const age = (new Date().getTime() - new Date(dog.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+		if (age >= 2) {
+			return { type: 'breeding', label: 'Zuchthündin', color: 'purple', icon: '♀' }
+		}
+	}
+	return null // Kein Status für normale Hunde
+}
 
 export default function SearchPage() {
 	const [viewMode, setViewMode] = useState<'table' | 'map'>('table')
@@ -267,17 +292,18 @@ export default function SearchPage() {
 		gender: '',
 		color: '',
 		stud: '',
+		owner: '',
 		healthTests: false
 	})
 	const [filteredDogs, setFilteredDogs] = useState(dogs)
 	const [showToast, setShowToast] = useState(false)
 	const [toastMessage, setToastMessage] = useState('')
-	
+
 	// Modal State
 	const [selectedDog, setSelectedDog] = useState<any>(null)
 	const [showDogDetailsModal, setShowDogDetailsModal] = useState(false)
 	const [showContactModal, setShowContactModal] = useState(false)
-	
+
 	// Paginierung State
 	const [currentPage, setCurrentPage] = useState(1)
 	const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -312,17 +338,17 @@ export default function SearchPage() {
 			if (searchFilters.name && !dog.name.toLowerCase().includes(searchFilters.name.toLowerCase())) {
 				return false
 			}
-			
+
 			// Geschlecht-Filter
 			if (searchFilters.gender && dog.gender !== searchFilters.gender) {
 				return false
 			}
-			
+
 			// Farbe-Filter
 			if (searchFilters.color && dog.color !== searchFilters.color) {
 				return false
 			}
-			
+
 			// Deckrüde-Filter
 			if (searchFilters.stud === 'available' && !dog.isStudAvailable) {
 				return false
@@ -330,15 +356,20 @@ export default function SearchPage() {
 			if (searchFilters.stud === 'not-available' && dog.isStudAvailable) {
 				return false
 			}
-			
+
+			// Besitzer-Filter
+			if (searchFilters.owner && dog.owner !== searchFilters.owner) {
+				return false
+			}
+
 			// Gesundheitsdaten-Filter
 			if (searchFilters.healthTests && dog.healthTests.length === 0) {
 				return false
 			}
-			
+
 			return true
 		})
-		
+
 		setFilteredDogs(results)
 		setTotalItems(results.length)
 		setCurrentPage(1) // Zurück zur ersten Seite
@@ -371,7 +402,7 @@ export default function SearchPage() {
 
 				{/* Suchfilter */}
 				<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Name
@@ -384,7 +415,7 @@ export default function SearchPage() {
 								className="input w-full"
 							/>
 						</div>
-						
+
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Geschlecht
@@ -395,11 +426,11 @@ export default function SearchPage() {
 								className="input w-full"
 							>
 								<option value="">Alle</option>
-								<option value="Männlich">Männlich</option>
-								<option value="Weiblich">Weiblich</option>
+								<option value="R">Rüde</option>
+								<option value="H">Hündin</option>
 							</select>
 						</div>
-						
+
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Farbe
@@ -415,7 +446,7 @@ export default function SearchPage() {
 								<option value="Blond">Blond</option>
 							</select>
 						</div>
-						
+
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Deckrüde
@@ -430,7 +461,23 @@ export default function SearchPage() {
 								<option value="not-available">Nicht verfügbar</option>
 							</select>
 						</div>
-						
+
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Besitzer
+							</label>
+							<select
+								value={searchFilters.owner}
+								onChange={(e) => setSearchFilters({...searchFilters, owner: e.target.value})}
+								className="input w-full"
+							>
+								<option value="">Alle</option>
+								{uniqueOwners.map(owner => (
+									<option key={owner} value={owner}>{owner}</option>
+								))}
+							</select>
+						</div>
+
 						<div className="flex items-end">
 							<button
 								onClick={handleSearch}
@@ -456,7 +503,7 @@ export default function SearchPage() {
 									{totalItems} Hunde gefunden
 								</p>
 							</div>
-							
+
 							<div className="flex space-x-2">
 								<button
 									onClick={() => setViewMode('table')}
@@ -539,10 +586,10 @@ export default function SearchPage() {
 												<div className="text-sm text-gray-500">{dog.pedigreeNumber}</div>
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{dog.gender}
+												{getGenderDisplay(dog.gender)}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{dog.birthDate}
+												{formatDate(new Date(dog.birthDate))}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{dog.color}
@@ -557,16 +604,21 @@ export default function SearchPage() {
 												</div>
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap">
-												{dog.isStudAvailable ? (
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-														<HeartSolidIcon className="h-3 w-3 mr-1" />
-														Deckrüde
-													</span>
-												) : (
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-														Normal
-													</span>
-												)}
+												{(() => {
+													const dogType = getDogType(dog)
+													if (!dogType) return null
+
+													const colorClasses = {
+														green: 'bg-green-100 text-green-800',
+														purple: 'bg-purple-100 text-purple-800'
+													}
+													return (
+														<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClasses[dogType.color as keyof typeof colorClasses]}`}>
+															<span className="mr-1">{dogType.icon}</span>
+															{dogType.label}
+														</span>
+													)
+												})()}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap">
 												<div className="flex flex-wrap gap-1">
@@ -582,7 +634,7 @@ export default function SearchPage() {
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 												<div className="flex space-x-2">
-													<button 
+													<button
 														onClick={() => handleDogDetails(dog)}
 														className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
 														title="Details anzeigen"
@@ -590,7 +642,7 @@ export default function SearchPage() {
 														<InformationCircleIcon className="h-4 w-4" />
 													</button>
 													{dog.isStudAvailable && (
-														<button 
+														<button
 															onClick={() => handleContact(dog)}
 															className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
 															title="Kontakt aufnehmen"
@@ -627,11 +679,11 @@ export default function SearchPage() {
 									<div className="flex items-center space-x-6">
 										<div className="flex items-center">
 											<div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-											<span className="text-sm font-medium text-gray-700">Deckrüde verfügbar</span>
+											<span className="text-sm font-medium text-gray-700">♂ Deckrüde</span>
 										</div>
 										<div className="flex items-center">
-											<div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-											<span className="text-sm font-medium text-gray-700">Normal</span>
+											<div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+											<span className="text-sm font-medium text-gray-700">♀ Zuchthündin</span>
 										</div>
 									</div>
 									<div>
@@ -668,7 +720,7 @@ export default function SearchPage() {
 									<option value={totalItems}>Alle</option>
 								</select>
 							</div>
-							
+
 							<div className="flex items-center space-x-2">
 								<button
 									onClick={() => handlePageChange(currentPage - 1)}
@@ -677,7 +729,7 @@ export default function SearchPage() {
 								>
 									Zurück
 								</button>
-								
+
 								{Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
 									let pageNum
 									if (totalPages <= 5) {
@@ -689,7 +741,7 @@ export default function SearchPage() {
 									} else {
 										pageNum = currentPage - 2 + i
 									}
-									
+
 									return (
 										<button
 											key={pageNum}
@@ -704,7 +756,7 @@ export default function SearchPage() {
 										</button>
 									);
 								})}
-								
+
 								<button
 									onClick={() => handlePageChange(currentPage + 1)}
 									disabled={currentPage === totalPages}
@@ -729,8 +781,8 @@ export default function SearchPage() {
 							</h3>
 							<div className="mt-2 text-sm text-blue-700">
 								<p>
-									Die hier angezeigten Gesundheitsdaten sind öffentlich verfügbare Informationen. 
-									Für detaillierte Auswertungen und Zuchtempfehlungen wenden Sie sich bitte an 
+									Die hier angezeigten Gesundheitsdaten sind öffentlich verfügbare Informationen.
+									Für detaillierte Auswertungen und Zuchtempfehlungen wenden Sie sich bitte an
 									den jeweiligen Züchter oder den HZD.
 								</p>
 							</div>
@@ -756,7 +808,7 @@ export default function SearchPage() {
 										</svg>
 									</button>
 								</div>
-								
+
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 									{/* Hauptbild */}
 									<div>
@@ -766,7 +818,7 @@ export default function SearchPage() {
 											alt={`${selectedDog.name} - Hauptbild`}
 										/>
 									</div>
-									
+
 									{/* Hundedaten */}
 									<div className="space-y-4">
 										<div>
@@ -774,13 +826,13 @@ export default function SearchPage() {
 											<div className="mt-2 space-y-2 text-sm">
 												<div><strong>Name:</strong> {selectedDog.name}</div>
 												<div><strong>Zuchtbuch:</strong> {selectedDog.pedigreeNumber}</div>
-												<div><strong>Geburtsdatum:</strong> {selectedDog.birthDate}</div>
-												<div><strong>Geschlecht:</strong> {selectedDog.gender}</div>
+												<div><strong>Geburtsdatum:</strong> {formatDate(new Date(selectedDog.birthDate))}</div>
+												<div><strong>Geschlecht:</strong> {getGenderDisplay(selectedDog.gender)}</div>
 												<div><strong>Farbe:</strong> {selectedDog.color}</div>
 												<div><strong>Mikrochip:</strong> {selectedDog.microchipId}</div>
 											</div>
 										</div>
-										
+
 										<div>
 											<h4 className="font-semibold text-gray-900">Besitzer</h4>
 											<div className="mt-2 space-y-2 text-sm">
@@ -789,25 +841,26 @@ export default function SearchPage() {
 												<div><strong>PLZ:</strong> {selectedDog.plz}</div>
 											</div>
 										</div>
-										
-										<div>
-											<h4 className="font-semibold text-gray-900">Status</h4>
-											<div className="mt-2">
-												{selectedDog.isStudAvailable ? (
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-														<HeartIcon className="h-3 w-3 mr-1" />
-														Deckrüde verfügbar
-													</span>
-												) : (
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-														Normal
-													</span>
-												)}
-											</div>
-										</div>
+
+										{(() => {
+											const dogType = getDogType(selectedDog)
+											if (!dogType) return null
+
+											return (
+												<div>
+													<h4 className="font-semibold text-gray-900">Status</h4>
+													<div className="mt-2">
+														<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${dogType.color === 'green' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+															<span className="mr-1">{dogType.icon}</span>
+															{dogType.label}
+														</span>
+													</div>
+												</div>
+											)
+										})()}
 									</div>
 								</div>
-								
+
 								{/* Gesundheitsdaten */}
 								<div className="mt-6">
 									<h4 className="font-semibold text-gray-900 mb-3">Gesundheitsdaten</h4>
@@ -822,7 +875,7 @@ export default function SearchPage() {
 										))}
 									</div>
 								</div>
-								
+
 								{/* Bildergalerie */}
 								{selectedDog.gallery && selectedDog.gallery.length > 1 && (
 									<div className="mt-6">
@@ -839,7 +892,7 @@ export default function SearchPage() {
 										</div>
 									</div>
 								)}
-								
+
 								<div className="mt-6 flex space-x-3">
 									<button
 										onClick={closeModals}
@@ -880,7 +933,7 @@ export default function SearchPage() {
 										</svg>
 									</button>
 								</div>
-								
+
 								<div className="space-y-4">
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
@@ -891,7 +944,7 @@ export default function SearchPage() {
 											<div className="text-xs text-gray-500 mt-1">{selectedDog.pedigreeNumber}</div>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											Besitzer
@@ -900,7 +953,7 @@ export default function SearchPage() {
 											<span className="text-gray-700">{selectedDog.owner}</span>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											Standort
@@ -910,27 +963,32 @@ export default function SearchPage() {
 											<div className="text-xs text-gray-500 mt-1">PLZ: {selectedDog.plz}</div>
 										</div>
 									</div>
-									
-									{selectedDog.isStudAvailable && (
-										<div className="p-3 bg-green-50 border border-green-200 rounded-md">
-											<div className="flex items-center">
-												<HeartIcon className="h-4 w-4 text-green-600 mr-2" />
-												<span className="text-sm font-medium text-green-800">
-													Dieser Hund ist als Deckrüde verfügbar
-												</span>
+
+									{(() => {
+										const dogType = getDogType(selectedDog)
+										if (!dogType) return null
+
+										return (
+											<div className={`p-3 border rounded-md ${dogType.color === 'green' ? 'bg-green-50 border-green-200' : 'bg-purple-50 border-purple-200'}`}>
+												<div className="flex items-center">
+													<span className="mr-2">{dogType.icon}</span>
+													<span className={`text-sm font-medium ${dogType.color === 'green' ? 'text-green-800' : 'text-purple-800'}`}>
+														{dogType.type === 'stud' ? 'Dieser Hund ist als Deckrüde verfügbar' : 'Diese Hündin ist für die Zucht geeignet'}
+													</span>
+												</div>
 											</div>
-										</div>
-									)}
+										)
+									})()}
 								</div>
-								
+
 								<div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
 									<h4 className="text-sm font-medium text-blue-800 mb-2">Kontaktinformationen</h4>
 									<p className="text-sm text-blue-700">
-										Für weitere Informationen und Kontaktaufnahme wenden Sie sich bitte direkt an den HZD 
+										Für weitere Informationen und Kontaktaufnahme wenden Sie sich bitte direkt an den HZD
 										oder nutzen Sie die offiziellen Kanäle des Züchters.
 									</p>
 								</div>
-								
+
 								<div className="mt-6 flex space-x-3">
 									<button
 										onClick={closeModals}
