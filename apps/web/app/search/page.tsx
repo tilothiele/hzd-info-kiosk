@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { allDogs } from './dog-data'
 import { 
 	MagnifyingGlassIcon,
 	FunnelIcon,
@@ -18,15 +19,13 @@ import {
 import { 
 	HeartIcon as HeartSolidIcon,
 	UserIcon as UserSolidIcon,
-	CalendarIcon as CalendarSolidIcon,
-	MapPinIcon as MapPinSolidIcon,
 } from '@heroicons/react/24/solid'
 
 // Map-Komponente direkt integriert
 function SimpleMap({ dogs }: { dogs: any[] }) {
 	const mapRef = useRef<HTMLDivElement>(null)
 	const mapInstanceRef = useRef<any>(null)
-	const [isClient, setIsClient] = useState(false)
+	const [isClient, setIsClient] = useState(false) // Added for hydration fix
 
 	// PLZ-basierte Koordinaten-Lookup
 	const getCoordinatesByPLZ = (plz: string) => {
@@ -42,7 +41,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 			'50679': [50.9375, 6.9603],
 			// Stuttgart
 			'70173': [48.7758, 9.1829],
-			'70178': [48.7758, 9.1829],
+			'70174': [48.7758, 9.1829],
 			// Berlin
 			'10115': [52.5200, 13.4050],
 			'10117': [52.5200, 13.4050],
@@ -51,7 +50,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 			'60313': [50.1109, 8.6821],
 			// Düsseldorf
 			'40213': [51.2277, 6.7735],
-			'40211': [51.2277, 6.7735],
+			'40215': [51.2277, 6.7735],
 			// Leipzig
 			'04109': [51.3397, 12.3731],
 			'04103': [51.3397, 12.3731],
@@ -76,21 +75,30 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 			// Schwerin
 			'19053': [53.6355, 11.4012],
 			'19055': [53.6355, 11.4012],
-			// Potsdam
-			'14467': [52.3989, 13.0667],
-			'14469': [52.3989, 13.0667],
-			// Saarbrücken
-			'66111': [49.2401, 6.9969],
-			'66113': [49.2401, 6.9969],
 			// Mainz
-			'55116': [50.0755, 8.2375],
-			'55118': [50.0755, 8.2375],
-			// Wiesbaden
-			'65183': [50.0826, 8.2493],
-			'65185': [50.0826, 8.2493],
-			// Erfurt
-			'99084': [50.9848, 11.0299],
-			'99086': [50.9848, 11.0299],
+			'55116': [49.9929, 8.2473],
+			'55118': [49.9929, 8.2473],
+			// Rostock
+			'18055': [54.0924, 12.1286],
+			'18057': [54.0924, 12.1286],
+			// Freiburg
+			'79098': [47.9990, 7.8421],
+			'79100': [47.9990, 7.8421],
+			// Augsburg
+			'86150': [48.3665, 10.8948],
+			'86152': [48.3665, 10.8948],
+			// Münster
+			'48143': [51.9616, 7.6284],
+			'48145': [51.9616, 7.6284],
+			// Bonn
+			'53111': [50.7374, 7.0982],
+			'53113': [50.7374, 7.0982],
+			// Würzburg
+			'97070': [49.7912, 9.9530],
+			'97072': [49.7912, 9.9530],
+			// Jena
+			'07743': [50.9272, 11.5894],
+			'07745': [50.9272, 11.5894],
 		}
 		return plzCoordinates[plz] || [51.1657, 10.4515] // Deutschland-Zentrum als Fallback
 	}
@@ -102,7 +110,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 
 	useEffect(() => {
 		if (!isClient) return
-		
+
 		// Dynamisches Laden von Leaflet
 		const loadLeaflet = async () => {
 			// CSS laden
@@ -117,43 +125,43 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 			script.onload = () => {
 				if (mapRef.current && (window as any).L) {
 					const L = (window as any).L
-					
+
 					// Alte Karte entfernen falls vorhanden
 					if (mapInstanceRef.current) {
 						mapInstanceRef.current.remove()
 						mapInstanceRef.current = null
 					}
-					
+
 					// Container zurücksetzen
 					if ((mapRef.current as any)._leaflet_id) {
 						(mapRef.current as any)._leaflet_id = null
 					}
-					
+
 					// Karte initialisieren
 					const map = L.map(mapRef.current).setView([51.1657, 10.4515], 6)
 					mapInstanceRef.current = map
-					
+
 					// Tile Layer hinzufügen
 					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 						attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					}).addTo(map)
-					
+
 					// Marker hinzufügen
 					dogs.forEach((dog) => {
 						const coordinates = getCoordinatesByPLZ(dog.plz)
-						
+
 						// Custom Icon für Marker erstellen (30x30px)
 						const customIcon = L.divIcon({
 							className: 'custom-marker',
 							html: `<div style="
-								width: 30px; 
-								height: 30px; 
-								background-color: ${dog.isStudAvailable ? '#10b981' : '#3b82f6'}; 
-								border: 2px solid white; 
-								border-radius: 50%; 
-								display: flex; 
-								align-items: center; 
-								justify-content: center; 
+								width: 30px;
+								height: 30px;
+								background-color: ${dog.isStudAvailable ? '#10b981' : '#3b82f6'};
+								border: 2px solid white;
+								border-radius: 50%;
+								display: flex;
+								align-items: center;
+								justify-content: center;
 								box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 								font-size: 12px;
 								color: white;
@@ -163,9 +171,9 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 							iconAnchor: [15, 15],
 							popupAnchor: [0, -15]
 						})
-						
+
 						const marker = L.marker(coordinates, { icon: customIcon }).addTo(map)
-						
+
 						marker.bindPopup(`
 							<div style="padding: 8px; min-width: 200px;">
 								<h3 style="margin: 0 0 8px 0; font-weight: bold;">${dog.name}</h3>
@@ -194,12 +202,12 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 					mapInstanceRef.current.remove()
 					mapInstanceRef.current = null
 				}
-				
+
 				// Container zurücksetzen
 				if (mapRef.current && (mapRef.current as any)._leaflet_id) {
 					(mapRef.current as any)._leaflet_id = null
 				}
-				
+
 				// Cleanup
 				if (cssLink.parentNode) {
 					cssLink.parentNode.removeChild(cssLink)
@@ -211,9 +219,9 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 		}
 
 		loadLeaflet()
-	}, [dogs, isClient])
+	}, [dogs, isClient]) // Added isClient to dependency array
 
-	if (!isClient) {
+	if (!isClient) { // Conditional rendering for hydration fix
 		return (
 			<div 
 				className="h-96 w-full bg-gray-100 flex items-center justify-center"
@@ -249,287 +257,8 @@ interface SearchFilters {
 	healthTests: boolean
 }
 
-// Funktion zur Generierung von Mock-Daten für Hunde
-const generateDogs = () => {
-	const locations = [
-		{ name: 'München, Bayern', plz: '80331', coords: [48.1351, 11.5820] as [number, number] },
-		{ name: 'Hamburg, Hamburg', plz: '20095', coords: [53.5511, 9.9937] as [number, number] },
-		{ name: 'Köln, Nordrhein-Westfalen', plz: '50667', coords: [50.9375, 6.9603] as [number, number] },
-		{ name: 'Stuttgart, Baden-Württemberg', plz: '70173', coords: [48.7758, 9.1829] as [number, number] },
-		{ name: 'Berlin, Berlin', plz: '10115', coords: [52.5200, 13.4050] as [number, number] },
-		{ name: 'Frankfurt, Hessen', plz: '60311', coords: [50.1109, 8.6821] as [number, number] },
-		{ name: 'Düsseldorf, Nordrhein-Westfalen', plz: '40213', coords: [51.2277, 6.7735] as [number, number] },
-		{ name: 'Leipzig, Sachsen', plz: '04109', coords: [51.3397, 12.3731] as [number, number] },
-		{ name: 'Dresden, Sachsen', plz: '01067', coords: [51.0504, 13.7373] as [number, number] },
-		{ name: 'Nürnberg, Bayern', plz: '90402', coords: [49.4521, 11.0767] as [number, number] },
-		{ name: 'Bremen, Bremen', plz: '28195', coords: [53.0793, 8.8017] as [number, number] },
-		{ name: 'Hannover, Niedersachsen', plz: '30159', coords: [52.3759, 9.7320] as [number, number] },
-		{ name: 'Kiel, Schleswig-Holstein', plz: '24103', coords: [54.3233, 10.1228] as [number, number] },
-		{ name: 'Magdeburg, Sachsen-Anhalt', plz: '39104', coords: [52.1205, 11.6276] as [number, number] },
-		{ name: 'Schwerin, Mecklenburg-Vorpommern', plz: '19053', coords: [53.6355, 11.4012] as [number, number] },
-		{ name: 'Potsdam, Brandenburg', plz: '14467', coords: [52.3989, 13.0667] as [number, number] },
-		{ name: 'Saarbrücken, Saarland', plz: '66111', coords: [49.2401, 6.9969] as [number, number] },
-		{ name: 'Mainz, Rheinland-Pfalz', plz: '55116', coords: [50.0755, 8.2375] as [number, number] },
-		{ name: 'Wiesbaden, Hessen', plz: '65183', coords: [50.0826, 8.2493] as [number, number] },
-		{ name: 'Erfurt, Thüringen', plz: '99084', coords: [50.9848, 11.0299] as [number, number] },
-		// Weitere PLZ-Bereiche für mehr Vielfalt
-		{ name: 'München, Bayern', plz: '80335', coords: [48.1351, 11.5820] as [number, number] },
-		{ name: 'Hamburg, Hamburg', plz: '20099', coords: [53.5511, 9.9937] as [number, number] },
-		{ name: 'Köln, Nordrhein-Westfalen', plz: '50679', coords: [50.9375, 6.9603] as [number, number] },
-		{ name: 'Stuttgart, Baden-Württemberg', plz: '70178', coords: [48.7758, 9.1829] as [number, number] },
-		{ name: 'Berlin, Berlin', plz: '10117', coords: [52.5200, 13.4050] as [number, number] },
-		{ name: 'Frankfurt, Hessen', plz: '60313', coords: [50.1109, 8.6821] as [number, number] },
-		{ name: 'Düsseldorf, Nordrhein-Westfalen', plz: '40211', coords: [51.2277, 6.7735] as [number, number] },
-		{ name: 'Leipzig, Sachsen', plz: '04103', coords: [51.3397, 12.3731] as [number, number] },
-		{ name: 'Dresden, Sachsen', plz: '01069', coords: [51.0504, 13.7373] as [number, number] },
-		{ name: 'Nürnberg, Bayern', plz: '90403', coords: [49.4521, 11.0767] as [number, number] },
-		{ name: 'Bremen, Bremen', plz: '28197', coords: [53.0793, 8.8017] as [number, number] },
-		{ name: 'Hannover, Niedersachsen', plz: '30161', coords: [52.3759, 9.7320] as [number, number] },
-		{ name: 'Kiel, Schleswig-Holstein', plz: '24105', coords: [54.3233, 10.1228] as [number, number] },
-		{ name: 'Magdeburg, Sachsen-Anhalt', plz: '39106', coords: [52.1205, 11.6276] as [number, number] },
-		{ name: 'Schwerin, Mecklenburg-Vorpommern', plz: '19055', coords: [53.6355, 11.4012] as [number, number] },
-		{ name: 'Potsdam, Brandenburg', plz: '14469', coords: [52.3989, 13.0667] as [number, number] },
-		{ name: 'Saarbrücken, Saarland', plz: '66113', coords: [49.2401, 6.9969] as [number, number] },
-		{ name: 'Mainz, Rheinland-Pfalz', plz: '55118', coords: [50.0755, 8.2375] as [number, number] },
-		{ name: 'Wiesbaden, Hessen', plz: '65185', coords: [50.0826, 8.2493] as [number, number] },
-		{ name: 'Erfurt, Thüringen', plz: '99086', coords: [50.9848, 11.0299] as [number, number] },
-	]
-
-	const breeders = [
-		'Max Mustermann', 'Anna Schmidt', 'Peter Weber', 'Maria Fischer',
-		'Thomas Müller', 'Sabine Wagner', 'Michael Becker', 'Julia Hoffmann',
-		'Andreas Schulz', 'Nicole Richter', 'Stefan Wolf', 'Petra Klein',
-		'Christian Lange', 'Birgit Neumann', 'Oliver Zimmermann', 'Susanne Braun',
-		'Markus Krüger', 'Tanja Hofmann', 'Jens Lehmann', 'Monika Schäfer'
-	]
-
-	const namePrefixes = [
-		'vom Schwarzen Wald', 'von der Eifel', 'aus dem Harz', 'vom Bodensee',
-		'vom Rhein', 'aus dem Schwarzwald', 'von der Mosel', 'aus dem Allgäu',
-		'vom Neckar', 'aus dem Spessart', 'von der Donau', 'aus dem Taunus',
-		'vom Main', 'aus dem Odenwald', 'von der Weser', 'aus dem Sauerland',
-		'vom Teutoburger Wald', 'aus dem Thüringer Wald', 'von der Elbe', 'aus dem Erzgebirge'
-	]
-
-	const dogNames = [
-		'Bella', 'Thor', 'Luna', 'Rex', 'Max', 'Emma', 'Bruno', 'Lilly',
-		'Rocky', 'Mia', 'Balu', 'Nala', 'Sam', 'Luna', 'Ben', 'Sofia',
-		'Charlie', 'Mila', 'Buddy', 'Lara', 'Jack', 'Emma', 'Toby', 'Anna',
-		'Oscar', 'Lisa', 'Felix', 'Marie', 'Leo', 'Julia', 'Finn', 'Sarah',
-		'Luca', 'Laura', 'Noah', 'Hannah', 'Elias', 'Lea', 'Paul', 'Lena',
-		'Henry', 'Maya', 'Liam', 'Ella', 'Luis', 'Clara', 'Anton', 'Lina',
-		'Emil', 'Nora', 'Theo', 'Mira', 'Jonas', 'Lia', 'Ben', 'Zoe'
-	]
-
-	const colors = ['Schwarzmarken', 'Blond', 'Schwarz']
-	const genders = ['Männlich', 'Weiblich']
-	const healthTestOptions = [
-		['HD-A1', 'ED-0'],
-		['HD-A1', 'ED-0', 'PRA-frei'],
-		['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei'],
-		['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei'],
-		['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei', 'IC-frei']
-	]
-
-	const dogs = []
-	
-	for (let i = 1; i <= 100; i++) {
-		const location = locations[Math.floor(Math.random() * locations.length)]
-		const breeder = breeders[Math.floor(Math.random() * breeders.length)]
-		const dogName = dogNames[Math.floor(Math.random() * dogNames.length)]
-		const namePrefix = namePrefixes[Math.floor(Math.random() * namePrefixes.length)]
-		const gender = genders[Math.floor(Math.random() * genders.length)]
-		const color = colors[Math.floor(Math.random() * colors.length)]
-		const healthTests = healthTestOptions[Math.floor(Math.random() * healthTestOptions.length)]
-		
-		// Geburtsdatum zwischen 2015 und 2023
-		const year = 2015 + Math.floor(Math.random() * 9)
-		const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')
-		const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')
-		const birthDate = `${year}-${month}-${day}`
-		
-		// Deckrüde nur bei männlichen Hunden
-		const isStudAvailable = gender === 'Männlich' && Math.random() > 0.7
-		
-		// Zuchtbuchnummer
-		const pedigreeNumber = `HZD-${year}-${String(i).padStart(3, '0')}`
-		
-		// Microchip ID
-		const microchipId = `DE${String(Math.floor(Math.random() * 1000000000000000)).padStart(15, '0')}`
-		
-		dogs.push({
-			id: i,
-			name: `${dogName} ${namePrefix}`,
-			gender,
-			birthDate,
-			color,
-			owner: breeder,
-			location: location.name,
-			plz: location.plz,
-			pedigreeNumber,
-			microchipId,
-			isStudAvailable,
-			healthTests,
-			coordinates: location.coords,
-		})
-	}
-	
-	return dogs
-}
-
-// Statische Mock-Daten für Hunde (verhindert Hydration-Fehler)
-const dogs = [
-	{
-		id: 1,
-		name: 'Sofia aus dem Harz',
-		gender: 'Weiblich',
-		birthDate: '2023-10-21',
-		color: 'Schwarzmarken',
-		owner: 'Michael Becker',
-		location: 'Mainz, Rheinland-Pfalz',
-		plz: '55118',
-		pedigreeNumber: 'HZD-2023-001',
-		microchipId: 'DE088442848605772',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei', 'IC-frei'],
-		coordinates: [49.9929, 8.2473] as [number, number],
-	},
-	{
-		id: 2,
-		name: 'Balu vom Neckar',
-		gender: 'Männlich',
-		birthDate: '2022-05-08',
-		color: 'Schwarzmarken',
-		owner: 'Petra Klein',
-		location: 'Bremen, Bremen',
-		plz: '28197',
-		pedigreeNumber: 'HZD-2022-002',
-		microchipId: 'DE786309261544450',
-		isStudAvailable: true,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei'],
-		coordinates: [53.0793, 8.8017] as [number, number],
-	},
-	{
-		id: 3,
-		name: 'Finn aus dem Sauerland',
-		gender: 'Männlich',
-		birthDate: '2018-03-26',
-		color: 'Schwarzmarken',
-		owner: 'Peter Weber',
-		location: 'Kiel, Schleswig-Holstein',
-		plz: '24105',
-		pedigreeNumber: 'HZD-2018-003',
-		microchipId: 'DE430256210786568',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei'],
-		coordinates: [54.3233, 10.1228] as [number, number],
-	},
-	{
-		id: 4,
-		name: 'Theo von der Donau',
-		gender: 'Weiblich',
-		birthDate: '2016-06-03',
-		color: 'Schwarz',
-		owner: 'Anna Schmidt',
-		location: 'Berlin, Berlin',
-		plz: '10115',
-		pedigreeNumber: 'HZD-2016-004',
-		microchipId: 'DE127561841213699',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei', 'IC-frei'],
-		coordinates: [52.5200, 13.4050] as [number, number],
-	},
-	{
-		id: 5,
-		name: 'Bruno aus dem Thüringer Wald',
-		gender: 'Männlich',
-		birthDate: '2017-02-02',
-		color: 'Schwarzmarken',
-		owner: 'Jens Lehmann',
-		location: 'Hamburg, Hamburg',
-		plz: '20099',
-		pedigreeNumber: 'HZD-2017-005',
-		microchipId: 'DE593473592979259',
-		isStudAvailable: true,
-		healthTests: ['HD-A1', 'ED-0'],
-		coordinates: [53.5511, 9.9937] as [number, number],
-	},
-	{
-		id: 6,
-		name: 'Mira vom Schwarzen Wald',
-		gender: 'Männlich',
-		birthDate: '2019-10-19',
-		color: 'Schwarz',
-		owner: 'Petra Klein',
-		location: 'Stuttgart, Baden-Württemberg',
-		plz: '70173',
-		pedigreeNumber: 'HZD-2019-006',
-		microchipId: 'DE376741921291929',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei'],
-		coordinates: [48.7758, 9.1829] as [number, number],
-	},
-	{
-		id: 7,
-		name: 'Anton vom Rhein',
-		gender: 'Weiblich',
-		birthDate: '2018-07-25',
-		color: 'Blond',
-		owner: 'Birgit Neumann',
-		location: 'Nürnberg, Bayern',
-		plz: '90403',
-		pedigreeNumber: 'HZD-2018-007',
-		microchipId: 'DE291760565620811',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei', 'IC-frei'],
-		coordinates: [49.4521, 11.0767] as [number, number],
-	},
-	{
-		id: 8,
-		name: 'Hannah aus dem Taunus',
-		gender: 'Männlich',
-		birthDate: '2015-03-20',
-		color: 'Schwarz',
-		owner: 'Jens Lehmann',
-		location: 'Nürnberg, Bayern',
-		plz: '90402',
-		pedigreeNumber: 'HZD-2015-008',
-		microchipId: 'DE454297053851310',
-		isStudAvailable: true,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei'],
-		coordinates: [49.4521, 11.0767] as [number, number],
-	},
-	{
-		id: 9,
-		name: 'Rex aus dem Sauerland',
-		gender: 'Männlich',
-		birthDate: '2022-05-11',
-		color: 'Blond',
-		owner: 'Maria Fischer',
-		location: 'Berlin, Berlin',
-		plz: '10115',
-		pedigreeNumber: 'HZD-2022-009',
-		microchipId: 'DE312031275818791',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0'],
-		coordinates: [52.5200, 13.4050] as [number, number],
-	},
-	{
-		id: 10,
-		name: 'Luna aus dem Sauerland',
-		gender: 'Männlich',
-		birthDate: '2022-08-25',
-		color: 'Blond',
-		owner: 'Susanne Braun',
-		location: 'Kiel, Schleswig-Holstein',
-		plz: '24103',
-		pedigreeNumber: 'HZD-2022-010',
-		microchipId: 'DE975415778305741',
-		isStudAvailable: false,
-		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei'],
-		coordinates: [54.3233, 10.1228] as [number, number],
-	},
-]
+// Verwende die importierten Hundedaten
+const dogs = allDogs
 
 export default function SearchPage() {
 	const [viewMode, setViewMode] = useState<'table' | 'map'>('table')
@@ -544,15 +273,37 @@ export default function SearchPage() {
 	const [showToast, setShowToast] = useState(false)
 	const [toastMessage, setToastMessage] = useState('')
 	
+	// Modal State
+	const [selectedDog, setSelectedDog] = useState<any>(null)
+	const [showDogDetailsModal, setShowDogDetailsModal] = useState(false)
+	const [showContactModal, setShowContactModal] = useState(false)
+	
 	// Paginierung State
 	const [currentPage, setCurrentPage] = useState(1)
 	const [itemsPerPage, setItemsPerPage] = useState(10)
-	const [totalItems, setTotalItems] = useState(10) // Statische Anzahl für Hydration-Konsistenz
+	const [totalItems, setTotalItems] = useState(110) // 110 Hunde
 
 	const showToastMessage = (message: string) => {
 		setToastMessage(message)
 		setShowToast(true)
 		setTimeout(() => setShowToast(false), 3000)
+	}
+
+	// Handler für Aktionsbuttons
+	const handleDogDetails = (dog: any) => {
+		setSelectedDog(dog)
+		setShowDogDetailsModal(true)
+	}
+
+	const handleContact = (dog: any) => {
+		setSelectedDog(dog)
+		setShowContactModal(true)
+	}
+
+	const closeModals = () => {
+		setShowDogDetailsModal(false)
+		setShowContactModal(false)
+		setSelectedDog(null)
 	}
 
 	const handleSearch = () => {
@@ -573,15 +324,15 @@ export default function SearchPage() {
 			}
 			
 			// Deckrüde-Filter
-			if (searchFilters.stud === 'ja' && !dog.isStudAvailable) {
+			if (searchFilters.stud === 'available' && !dog.isStudAvailable) {
 				return false
 			}
-			if (searchFilters.stud === 'nein' && dog.isStudAvailable) {
+			if (searchFilters.stud === 'not-available' && dog.isStudAvailable) {
 				return false
 			}
 			
 			// Gesundheitsdaten-Filter
-			if (searchFilters.healthTests && dog.healthTests.length < 3) {
+			if (searchFilters.healthTests && dog.healthTests.length === 0) {
 				return false
 			}
 			
@@ -590,205 +341,129 @@ export default function SearchPage() {
 		
 		setFilteredDogs(results)
 		setTotalItems(results.length)
-		setCurrentPage(1) // Zurück zur ersten Seite bei neuer Suche
+		setCurrentPage(1) // Zurück zur ersten Seite
 		showToastMessage(`${results.length} Hunde gefunden`)
 	}
 
-	const handleFilterChange = (key: keyof SearchFilters, value: string | boolean) => {
-		setSearchFilters(prev => ({ ...prev, [key]: value }))
-	}
-
-	// Paginierung Handler
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page)
 	}
 
-	const handleItemsPerPageChange = (newItemsPerPage: number) => {
-		setItemsPerPage(newItemsPerPage)
+	const handleItemsPerPageChange = (items: number) => {
+		setItemsPerPage(items)
 		setCurrentPage(1) // Zurück zur ersten Seite
 	}
 
-	// Berechnung der Paginierung
+	// Berechne paginierte Hunde
 	const totalPages = Math.ceil(totalItems / itemsPerPage)
 	const startIndex = (currentPage - 1) * itemsPerPage
 	const endIndex = startIndex + itemsPerPage
 	const currentDogs = filteredDogs.slice(startIndex, endIndex)
 
-	const clearFilters = () => {
-		setSearchFilters({
-			name: '',
-			gender: '',
-			color: '',
-			stud: '',
-			healthTests: false
-		})
-		setFilteredDogs(dogs)
-		showToastMessage('Filter zurückgesetzt - Alle Hunde werden angezeigt')
-	}
-
 	return (
 		<div className="min-h-screen bg-gray-50">
-			{/* Toast Notification */}
-			{showToast && (
-				<div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out">
-					<div className="flex items-center">
-						<InformationCircleIcon className="h-5 w-5 mr-2" />
-						{toastMessage}
-					</div>
-				</div>
-			)}
-
-			<div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-				{/* Header Section */}
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				{/* Header */}
 				<div className="mb-8">
-					<div className="flex items-center space-x-4 mb-4">
-						<div className="p-3 bg-blue-100 rounded-xl">
-							<MagnifyingGlassIcon className="h-8 w-8 text-blue-600" />
-						</div>
-						<div>
-							<h1 className="text-3xl font-bold text-gray-900">
-								Hovawart-Datenbank
-							</h1>
-							<p className="text-lg text-gray-600">
-								Durchsuchen Sie die Hovawart-Datenbank nach Hunden, Züchtern und Gesundheitsdaten
-							</p>
-						</div>
-					</div>
+					<h1 className="text-3xl font-bold text-gray-900 mb-2">Hovawart-Suche</h1>
+					<p className="text-gray-600">Finden Sie den perfekten Hovawart für Ihre Bedürfnisse</p>
 				</div>
 
-				{/* Search Filters Card */}
-				<div className="bg-white shadow-lg rounded-xl p-6 mb-8">
-					<div className="flex items-center mb-6">
-						<FunnelIcon className="h-5 w-5 text-gray-500 mr-2" />
-						<h2 className="text-xl font-semibold text-gray-900">Suchfilter</h2>
-					</div>
-					
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+				{/* Suchfilter */}
+				<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 						<div>
-							<label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-								Hundename
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Name
 							</label>
-							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-									<MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-								</div>
-								<input
-									type="text"
-									id="name"
-									placeholder="z.B. Bella vom..."
-									value={searchFilters.name}
-									onChange={(e) => handleFilterChange('name', e.target.value)}
-									className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-								/>
-							</div>
+							<input
+								type="text"
+								value={searchFilters.name}
+								onChange={(e) => setSearchFilters({...searchFilters, name: e.target.value})}
+								placeholder="Hundename eingeben..."
+								className="input w-full"
+							/>
 						</div>
-
+						
 						<div>
-							<label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Geschlecht
 							</label>
 							<select
-								id="gender"
 								value={searchFilters.gender}
-								onChange={(e) => handleFilterChange('gender', e.target.value)}
-								className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								onChange={(e) => setSearchFilters({...searchFilters, gender: e.target.value})}
+								className="input w-full"
 							>
-								<option value="">Alle Geschlechter</option>
+								<option value="">Alle</option>
 								<option value="Männlich">Männlich</option>
 								<option value="Weiblich">Weiblich</option>
 							</select>
 						</div>
-
+						
 						<div>
-							<label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-								Fellfarbe
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Farbe
 							</label>
 							<select
-								id="color"
 								value={searchFilters.color}
-								onChange={(e) => handleFilterChange('color', e.target.value)}
-								className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								onChange={(e) => setSearchFilters({...searchFilters, color: e.target.value})}
+								className="input w-full"
 							>
-								<option value="">Alle Farben</option>
+								<option value="">Alle</option>
 								<option value="Schwarzmarken">Schwarzmarken</option>
-								<option value="Blond">Blond</option>
 								<option value="Schwarz">Schwarz</option>
+								<option value="Blond">Blond</option>
 							</select>
 						</div>
-
+						
 						<div>
-							<label htmlFor="stud" className="block text-sm font-medium text-gray-700 mb-2">
+							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Deckrüde
 							</label>
 							<select
-								id="stud"
 								value={searchFilters.stud}
-								onChange={(e) => handleFilterChange('stud', e.target.value)}
-								className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								onChange={(e) => setSearchFilters({...searchFilters, stud: e.target.value})}
+								className="input w-full"
 							>
-								<option value="">Alle Hunde</option>
-								<option value="ja">Deckrüde verfügbar</option>
-								<option value="nein">Nicht verfügbar</option>
+								<option value="">Alle</option>
+								<option value="available">Verfügbar</option>
+								<option value="not-available">Nicht verfügbar</option>
 							</select>
 						</div>
-					</div>
-
-					<div className="mt-6 pt-6 border-t border-gray-200">
-						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-							<div className="flex items-center">
-								<input
-									type="checkbox"
-									id="healthTests"
-									checked={searchFilters.healthTests}
-									onChange={(e) => handleFilterChange('healthTests', e.target.checked)}
-									className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-								/>
-								<label htmlFor="healthTests" className="ml-2 block text-sm font-medium text-gray-900">
-									Nur Hunde mit vollständigen Gesundheitsdaten
-								</label>
-							</div>
-
-							<div className="flex space-x-3">
-								<button
-									onClick={clearFilters}
-									className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-								>
-									<ArrowPathIcon className="h-4 w-4 mr-2" />
-									Zurücksetzen
-								</button>
-								<button
-									onClick={handleSearch}
-									className="inline-flex items-center px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-								>
-									<MagnifyingGlassIcon className="h-4 w-4 mr-2" />
-									Suchen
-								</button>
-							</div>
+						
+						<div className="flex items-end">
+							<button
+								onClick={handleSearch}
+								className="btn-primary w-full flex items-center justify-center"
+							>
+								<MagnifyingGlassIcon className="h-4 w-4 mr-2" />
+								Suchen
+							</button>
 						</div>
 					</div>
 				</div>
 
-				{/* Results Section */}
-				<div className="space-y-6">
-					{/* Results Header */}
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-						<div>
-							<h2 className="text-2xl font-bold text-gray-900">
-								Suchergebnisse
-							</h2>
-							<p className="text-gray-600">
-								{totalItems} Hunde gefunden
-							</p>
-						</div>
-
-						<div className="flex items-center space-x-3">
-							<div className="flex rounded-lg border border-gray-300 overflow-hidden">
+				{/* Ansichtsmodus und Ergebnisse */}
+				<div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+					{/* Header mit Ansichtsmodus */}
+					<div className="px-6 py-4 border-b border-gray-200">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+							<div className="mb-4 sm:mb-0">
+								<h2 className="text-lg font-semibold text-gray-900">
+									Suchergebnisse
+								</h2>
+								<p className="text-sm text-gray-600">
+									{totalItems} Hunde gefunden
+								</p>
+							</div>
+							
+							<div className="flex space-x-2">
 								<button
 									onClick={() => setViewMode('table')}
-									className={`px-4 py-2 text-sm font-medium flex items-center ${
+									className={`px-4 py-2 rounded-md text-sm font-medium flex items-center ${
 										viewMode === 'table'
 											? 'bg-blue-600 text-white'
-											: 'bg-white text-gray-700 hover:bg-gray-50'
+											: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 									}`}
 								>
 									<TableCellsIcon className="h-4 w-4 mr-2" />
@@ -796,154 +471,139 @@ export default function SearchPage() {
 								</button>
 								<button
 									onClick={() => setViewMode('map')}
-									className={`px-4 py-2 text-sm font-medium flex items-center ${
+									className={`px-4 py-2 rounded-md text-sm font-medium flex items-center ${
 										viewMode === 'map'
 											? 'bg-blue-600 text-white'
-											: 'bg-white text-gray-700 hover:bg-gray-50'
+											: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 									}`}
 								>
 									<MapIcon className="h-4 w-4 mr-2" />
 									Karte
 								</button>
 							</div>
-							<button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-								<ArrowDownTrayIcon className="h-4 w-4" />
-							</button>
 						</div>
 					</div>
 
-					{/* Table View */}
+					{/* Tabellenansicht */}
 					{viewMode === 'table' && (
-						<div className="bg-white shadow-lg rounded-xl overflow-hidden">
-							<div className="overflow-x-auto">
-								<table className="min-w-full divide-y divide-gray-200">
-									<thead className="bg-gray-50">
-										<tr>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Hundename
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Geburtsdatum
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Geschlecht
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Farbe
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Besitzer
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Standort
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Status
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Gesundheit
-											</th>
-											<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-												Aktionen
-											</th>
-										</tr>
-									</thead>
-									<tbody className="bg-white divide-y divide-gray-200">
-										{currentDogs.map((dog) => (
-											<tr key={dog.id} className="hover:bg-gray-50 transition-colors duration-200">
-												<td className="px-6 py-4 whitespace-nowrap">
-													<div>
-														<div className="text-sm font-medium text-gray-900">
-															{dog.name}
-														</div>
-														<div className="text-sm text-gray-500 font-mono">
-															{dog.pedigreeNumber}
-														</div>
-													</div>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<div className="flex items-center text-sm text-gray-900">
-														<CalendarIcon className="h-4 w-4 text-gray-400 mr-2" />
-														{dog.birthDate}
-													</div>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-														dog.gender === 'Männlich' 
-															? 'bg-blue-100 text-blue-800' 
-															: 'bg-pink-100 text-pink-800'
-													}`}>
-														{dog.gender}
+						<div className="overflow-x-auto">
+							<table className="min-w-full divide-y divide-gray-200">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Bild
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Name
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Geschlecht
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Geburtsdatum
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Farbe
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Besitzer
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Standort
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Status
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Gesundheit
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Aktionen
+										</th>
+									</tr>
+								</thead>
+								<tbody className="bg-white divide-y divide-gray-200">
+									{currentDogs.map((dog) => (
+										<tr key={dog.id} className="hover:bg-gray-50">
+											<td className="px-6 py-4 whitespace-nowrap">
+												<div className="flex-shrink-0 h-16 w-16">
+													<img
+														className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+														src={dog.mainImage}
+														alt={`${dog.name} - Hauptbild`}
+													/>
+												</div>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap">
+												<div className="text-sm font-medium text-gray-900">{dog.name}</div>
+												<div className="text-sm text-gray-500">{dog.pedigreeNumber}</div>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												{dog.gender}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												{dog.birthDate}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												{dog.color}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												{dog.owner}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												<div className="flex items-center">
+													<MapPinIcon className="h-4 w-4 text-gray-400 mr-1" />
+													{dog.location}
+												</div>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap">
+												{dog.isStudAvailable ? (
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+														<HeartSolidIcon className="h-3 w-3 mr-1" />
+														Deckrüde
 													</span>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-														{dog.color}
+												) : (
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+														Normal
 													</span>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<div>
-														<div className="flex items-center text-sm text-gray-900">
-															<UserIcon className="h-4 w-4 text-gray-400 mr-2" />
-															{dog.owner}
-														</div>
-														<div className="text-xs text-gray-500 font-mono">
-															{dog.microchipId}
-														</div>
-													</div>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<div>
-														<div className="flex items-center text-sm text-gray-900">
-															<MapPinIcon className="h-4 w-4 text-gray-400 mr-2" />
-															{dog.location}
-														</div>
-														<div className="text-xs text-gray-500 font-mono">
-															PLZ: {dog.plz}
-														</div>
-													</div>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													{dog.isStudAvailable ? (
-														<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-															<HeartSolidIcon className="h-3 w-3 mr-1" />
-															Deckrüde verfügbar
+												)}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap">
+												<div className="flex flex-wrap gap-1">
+													{dog.healthTests.map((test: string, index: number) => (
+														<span
+															key={index}
+															className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+														>
+															{test}
 														</span>
-													) : (
-														<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-															Normal
-														</span>
-													)}
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap">
-													<div className="flex flex-wrap gap-1">
-														{dog.healthTests.map((test, index) => (
-															<span
-																key={index}
-																className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
-															>
-																{test}
-															</span>
-														))}
-													</div>
-												</td>
-												<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-													<div className="flex space-x-2">
-														<button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
-															<InformationCircleIcon className="h-4 w-4" />
+													))}
+												</div>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+												<div className="flex space-x-2">
+													<button 
+														onClick={() => handleDogDetails(dog)}
+														className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+														title="Details anzeigen"
+													>
+														<InformationCircleIcon className="h-4 w-4" />
+													</button>
+													{dog.isStudAvailable && (
+														<button 
+															onClick={() => handleContact(dog)}
+															className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+															title="Kontakt aufnehmen"
+														>
+															<HeartIcon className="h-4 w-4" />
 														</button>
-														{dog.isStudAvailable && (
-															<button className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50">
-																<HeartIcon className="h-4 w-4" />
-															</button>
-														)}
-													</div>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
+													)}
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
 						</div>
 					)}
 
@@ -989,33 +649,26 @@ export default function SearchPage() {
 				</div>
 
 				{/* Paginierung */}
-				{viewMode === 'table' && totalItems > 0 && (
-					<div className="bg-white shadow-lg rounded-xl p-6">
+				{viewMode === 'table' && totalPages > 1 && (
+					<div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-							{/* Items per page selector */}
-							<div className="flex items-center space-x-2">
-								<span className="text-sm text-gray-700">Anzeigen:</span>
+							<div className="flex items-center space-x-4">
+								<span className="text-sm text-gray-700">
+									Zeige {startIndex + 1} bis {Math.min(endIndex, totalItems)} von {totalItems} Ergebnissen
+								</span>
 								<select
 									value={itemsPerPage}
 									onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-									className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+									className="text-sm border border-gray-300 rounded-md px-2 py-1"
 								>
-									<option value={10}>10</option>
-									<option value={20}>20</option>
-									<option value={50}>50</option>
-									<option value={100}>100</option>
+									<option value={10}>10 pro Seite</option>
+									<option value={20}>20 pro Seite</option>
+									<option value={50}>50 pro Seite</option>
+									<option value={100}>100 pro Seite</option>
 									<option value={totalItems}>Alle</option>
 								</select>
-								<span className="text-sm text-gray-700">von {totalItems} Hunden</span>
 							</div>
-
-							{/* Page info */}
-							<div className="text-sm text-gray-700">
-								Seite {currentPage} von {totalPages} 
-								({startIndex + 1}-{Math.min(endIndex, totalItems)} von {totalItems})
-							</div>
-
-							{/* Pagination controls */}
+							
 							<div className="flex items-center space-x-2">
 								<button
 									onClick={() => handlePageChange(currentPage - 1)}
@@ -1025,35 +678,32 @@ export default function SearchPage() {
 									Zurück
 								</button>
 								
-								{/* Page numbers */}
-								<div className="flex space-x-1">
-									{Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-										let pageNum;
-										if (totalPages <= 5) {
-											pageNum = i + 1;
-										} else if (currentPage <= 3) {
-											pageNum = i + 1;
-										} else if (currentPage >= totalPages - 2) {
-											pageNum = totalPages - 4 + i;
-										} else {
-											pageNum = currentPage - 2 + i;
-										}
-										
-										return (
-											<button
-												key={pageNum}
-												onClick={() => handlePageChange(pageNum)}
-												className={`px-3 py-1 text-sm border rounded-md ${
-													currentPage === pageNum
-														? 'bg-blue-600 text-white border-blue-600'
-														: 'border-gray-300 hover:bg-gray-50'
-												}`}
-											>
-												{pageNum}
-											</button>
-										);
-									})}
-								</div>
+								{Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+									let pageNum
+									if (totalPages <= 5) {
+										pageNum = i + 1
+									} else if (currentPage <= 3) {
+										pageNum = i + 1
+									} else if (currentPage >= totalPages - 2) {
+										pageNum = totalPages - 4 + i
+									} else {
+										pageNum = currentPage - 2 + i
+									}
+									
+									return (
+										<button
+											key={pageNum}
+											onClick={() => handlePageChange(pageNum)}
+											className={`px-3 py-1 text-sm border rounded-md ${
+												currentPage === pageNum
+													? 'bg-blue-600 text-white border-blue-600'
+													: 'border-gray-300 hover:bg-gray-50'
+											}`}
+										>
+											{pageNum}
+										</button>
+									);
+								})}
 								
 								<button
 									onClick={() => handlePageChange(currentPage + 1)}
@@ -1087,6 +737,221 @@ export default function SearchPage() {
 						</div>
 					</div>
 				</div>
+
+				{/* Hund-Details Modal */}
+				{showDogDetailsModal && selectedDog && (
+					<div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+						<div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+							<div className="mt-3">
+								<div className="flex items-center justify-between mb-4">
+									<h3 className="text-lg font-medium text-gray-900">
+										Hund-Details: {selectedDog.name}
+									</h3>
+									<button
+										onClick={closeModals}
+										className="text-gray-400 hover:text-gray-600"
+									>
+										<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								</div>
+								
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+									{/* Hauptbild */}
+									<div>
+										<img
+											className="w-full h-64 object-cover rounded-lg border border-gray-200"
+											src={selectedDog.mainImage}
+											alt={`${selectedDog.name} - Hauptbild`}
+										/>
+									</div>
+									
+									{/* Hundedaten */}
+									<div className="space-y-4">
+										<div>
+											<h4 className="font-semibold text-gray-900">Grunddaten</h4>
+											<div className="mt-2 space-y-2 text-sm">
+												<div><strong>Name:</strong> {selectedDog.name}</div>
+												<div><strong>Zuchtbuch:</strong> {selectedDog.pedigreeNumber}</div>
+												<div><strong>Geburtsdatum:</strong> {selectedDog.birthDate}</div>
+												<div><strong>Geschlecht:</strong> {selectedDog.gender}</div>
+												<div><strong>Farbe:</strong> {selectedDog.color}</div>
+												<div><strong>Mikrochip:</strong> {selectedDog.microchipId}</div>
+											</div>
+										</div>
+										
+										<div>
+											<h4 className="font-semibold text-gray-900">Besitzer</h4>
+											<div className="mt-2 space-y-2 text-sm">
+												<div><strong>Name:</strong> {selectedDog.owner}</div>
+												<div><strong>Standort:</strong> {selectedDog.location}</div>
+												<div><strong>PLZ:</strong> {selectedDog.plz}</div>
+											</div>
+										</div>
+										
+										<div>
+											<h4 className="font-semibold text-gray-900">Status</h4>
+											<div className="mt-2">
+												{selectedDog.isStudAvailable ? (
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+														<HeartIcon className="h-3 w-3 mr-1" />
+														Deckrüde verfügbar
+													</span>
+												) : (
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+														Normal
+													</span>
+												)}
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								{/* Gesundheitsdaten */}
+								<div className="mt-6">
+									<h4 className="font-semibold text-gray-900 mb-3">Gesundheitsdaten</h4>
+									<div className="flex flex-wrap gap-2">
+										{selectedDog.healthTests.map((test: string, index: number) => (
+											<span
+												key={index}
+												className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+											>
+												{test}
+											</span>
+										))}
+									</div>
+								</div>
+								
+								{/* Bildergalerie */}
+								{selectedDog.gallery && selectedDog.gallery.length > 1 && (
+									<div className="mt-6">
+										<h4 className="font-semibold text-gray-900 mb-3">Weitere Bilder</h4>
+										<div className="grid grid-cols-3 gap-2">
+											{selectedDog.gallery.slice(1).map((image: string, index: number) => (
+												<img
+													key={index}
+													className="w-full h-24 object-cover rounded-lg border border-gray-200"
+													src={image}
+													alt={`${selectedDog.name} - Bild ${index + 2}`}
+												/>
+											))}
+										</div>
+									</div>
+								)}
+								
+								<div className="mt-6 flex space-x-3">
+									<button
+										onClick={closeModals}
+										className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200"
+									>
+										Schließen
+									</button>
+									<button
+										onClick={() => {
+											closeModals()
+											handleContact(selectedDog)
+										}}
+										className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
+									>
+										Kontakt aufnehmen
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Kontakt Modal */}
+				{showContactModal && selectedDog && (
+					<div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+						<div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+							<div className="mt-3">
+								<div className="flex items-center justify-between mb-4">
+									<h3 className="text-lg font-medium text-gray-900">
+										Kontakt: {selectedDog.owner}
+									</h3>
+									<button
+										onClick={closeModals}
+										className="text-gray-400 hover:text-gray-600"
+									>
+										<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								</div>
+								
+								<div className="space-y-4">
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-1">
+											Hund
+										</label>
+										<div className="p-3 bg-gray-50 rounded-md">
+											<span className="text-gray-700 font-medium">{selectedDog.name}</span>
+											<div className="text-xs text-gray-500 mt-1">{selectedDog.pedigreeNumber}</div>
+										</div>
+									</div>
+									
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-1">
+											Besitzer
+										</label>
+										<div className="p-3 bg-gray-50 rounded-md">
+											<span className="text-gray-700">{selectedDog.owner}</span>
+										</div>
+									</div>
+									
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-1">
+											Standort
+										</label>
+										<div className="p-3 bg-gray-50 rounded-md">
+											<span className="text-gray-700">{selectedDog.location}</span>
+											<div className="text-xs text-gray-500 mt-1">PLZ: {selectedDog.plz}</div>
+										</div>
+									</div>
+									
+									{selectedDog.isStudAvailable && (
+										<div className="p-3 bg-green-50 border border-green-200 rounded-md">
+											<div className="flex items-center">
+												<HeartIcon className="h-4 w-4 text-green-600 mr-2" />
+												<span className="text-sm font-medium text-green-800">
+													Dieser Hund ist als Deckrüde verfügbar
+												</span>
+											</div>
+										</div>
+									)}
+								</div>
+								
+								<div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+									<h4 className="text-sm font-medium text-blue-800 mb-2">Kontaktinformationen</h4>
+									<p className="text-sm text-blue-700">
+										Für weitere Informationen und Kontaktaufnahme wenden Sie sich bitte direkt an den HZD 
+										oder nutzen Sie die offiziellen Kanäle des Züchters.
+									</p>
+								</div>
+								
+								<div className="mt-6 flex space-x-3">
+									<button
+										onClick={closeModals}
+										className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200"
+									>
+										Schließen
+									</button>
+									<button
+										onClick={() => {
+											closeModals()
+											showToastMessage('Kontaktanfrage wurde gesendet!')
+										}}
+										className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200"
+									>
+										Kontakt anfragen
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	)
