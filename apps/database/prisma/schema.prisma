@@ -1,0 +1,249 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum UserRole {
+  BREEDER
+  STUD_OWNER
+  ADMIN
+  MEMBER
+  EDITOR
+}
+
+enum HealthRecordType {
+  VACCINATION
+  HEALTH_CERTIFICATE
+  BREEDING_CERTIFICATE
+  OTHER
+}
+
+enum GeneticTestType {
+  HD
+  ED
+  PRA
+  DM
+  VWD
+  OTHER
+}
+
+enum GeneticTestResult {
+  NORMAL
+  CARRIER
+  AFFECTED
+  UNKNOWN
+}
+
+// Models
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  address     String?
+  postalCode  String?
+  city        String?
+  country     String   @default("Deutschland")
+  latitude    Decimal?
+  longitude   Decimal?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  dogs        Dog[]
+  studServices StudService[]
+  userRoles   UserRole[]
+  assignedRoles UserRole[] @relation("RoleAssignedBy")
+
+  // Indexes
+  @@index([postalCode])
+  @@index([latitude, longitude])
+  @@map("users")
+}
+
+model UserRole {
+  id         String   @id @default(uuid())
+  userId     String
+  role       UserRole
+  isActive   Boolean  @default(true)
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  // Relationships
+  user         User  @relation(fields: [userId], references: [id])
+  assignedByUser User? @relation("RoleAssignedBy", fields: [assignedBy], references: [id])
+
+  // Constraints
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model Dog {
+  id             String   @id @default(uuid())
+  name           String
+  gender         Gender
+  birthDate      DateTime
+  deathDate      DateTime?
+  color          String
+  microchipId    String?  @unique
+  pedigreeNumber String?  @unique
+  isStudAvailable Boolean @default(false)
+  isActive       Boolean  @default(true)
+  description    String?
+  ownerId        String
+  motherId       String?
+  fatherId       String?
+  litterNumber   String?  @db.VarChar(10)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relationships
+  owner           User           @relation(fields: [ownerId], references: [id])
+  mother          Dog?           @relation("ParentOffspring", fields: [motherId], references: [id])
+  father          Dog?           @relation("ParentOffspring", fields: [fatherId], references: [id])
+  offspring       Dog[]          @relation("ParentOffspring")
+  healthRecords   HealthRecord[]
+  medicalFindings MedicalFinding[]
+  awards          Award[]
+  geneticTests    GeneticTest[]
+  studServices    StudService[]
+
+  // Indexes
+  @@index([name])
+  @@index([gender])
+  @@index([birthDate])
+  @@index([deathDate])
+  @@index([color])
+  @@index([ownerId])
+  @@index([motherId])
+  @@index([fatherId])
+  @@index([litterNumber])
+  @@index([isStudAvailable])
+  @@unique([motherId, litterNumber])
+  @@map("dogs")
+}
+
+model HealthRecord {
+  id           String            @id @default(uuid())
+  dogId        String
+  recordType   HealthRecordType
+  title        String
+  description  String?
+  recordDate   DateTime
+  expiryDate   DateTime?
+  veterinarian String?
+  documentUrl  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  // Relationships
+  dog Dog @relation(fields: [dogId], references: [id])
+
+  // Indexes
+  @@index([dogId])
+  @@index([recordDate])
+  @@index([expiryDate])
+  @@map("health_records")
+}
+
+model MedicalFinding {
+  id               String   @id @default(uuid())
+  dogId            String
+  date             DateTime
+  shortDescription String   @db.VarChar(100)
+  remarks          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  dog Dog @relation(fields: [dogId], references: [id])
+
+  // Indexes
+  @@index([dogId])
+  @@index([date])
+  @@index([shortDescription])
+  @@map("medical_findings")
+}
+
+model Award {
+  id          String    @id @default(uuid())
+  dogId       String
+  code        String    @db.VarChar(50)
+  date        DateTime?
+  description String    @db.VarChar(200)
+  issuer      String    @db.VarChar(100)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relationships
+  dog Dog @relation(fields: [dogId], references: [id])
+
+  // Indexes
+  @@index([dogId])
+  @@index([code])
+  @@index([date])
+  @@index([issuer])
+  @@map("awards")
+}
+
+model GeneticTest {
+  id               String             @id @default(uuid())
+  dogId            String
+  testType         GeneticTestType
+  testDate         DateTime
+  result           GeneticTestResult
+  laboratory       String             @db.VarChar(100)
+  certificateNumber String?           @db.VarChar(50)
+  notes            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  // Relationships
+  dog Dog @relation(fields: [dogId], references: [id])
+
+  // Indexes
+  @@index([dogId])
+  @@index([testType])
+  @@index([testDate])
+  @@index([result])
+  @@index([laboratory])
+  @@map("genetic_tests")
+}
+
+model StudService {
+  id          String   @id @default(uuid())
+  studDogId   String
+  ownerId     String
+  isAvailable Boolean  @default(true)
+  price       Decimal?
+  description String?
+  contactInfo String
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  studDog Dog  @relation(fields: [studDogId], references: [id])
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  // Indexes
+  @@index([studDogId])
+  @@index([isAvailable])
+  @@map("stud_services")
+}

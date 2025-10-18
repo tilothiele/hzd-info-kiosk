@@ -1,6 +1,6 @@
 # Quickstart Guide: Hovawart-Züchterdatenbank
 
-**Date**: 2024-12-19  
+**Date**: 2024-12-19
 **Feature**: Hovawart-Züchterdatenbank mit öffentlicher Suchfunktion
 
 ## Überblick
@@ -10,7 +10,7 @@ Diese Anleitung hilft Ihnen beim schnellen Einstieg in die Entwicklung der Hovaw
 ## Voraussetzungen
 
 ### Systemanforderungen
-- Node.js 18+ 
+- Node.js 18+
 - npm oder yarn
 - PostgreSQL 15+
 - Git

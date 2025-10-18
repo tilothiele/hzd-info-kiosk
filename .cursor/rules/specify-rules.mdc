@@ -3,12 +3,44 @@
 Auto-generated from all feature plans. Last updated: 2025-10-18
 
 ## Active Technologies
-- TypeScript 5.0+, Node.js 18+ + Next.js 14, React 18, Prisma ORM, PostgreSQL (001-hovawart-breeder-database)
+- TypeScript 5.0+, Node.js 18+ + Next.js 14, React 18, Prisma ORM, PostgreSQL, Redis, Jest, React Testing Library, Playwright (001-hovawart-breeder-database)
 
 ## Project Structure
 ```
-src/
-tests/
+apps/
+├── web/                    # Next.js Frontend
+│   ├── src/
+│   │   ├── app/           # App Router pages
+│   │   ├── components/    # React components
+│   │   ├── lib/          # Utilities and configurations
+│   │   └── types/        # TypeScript type definitions
+│   └── tests/
+│       ├── components/    # Component tests
+│       └── e2e/          # End-to-end tests
+│
+├── api/                   # Backend API
+│   ├── src/
+│   │   ├── routes/       # API route handlers
+│   │   ├── services/     # Business logic
+│   │   ├── models/       # Data models
+│   │   └── middleware/   # Authentication, validation
+│   └── tests/
+│       ├── unit/         # Unit tests
+│       └── integration/  # Integration tests
+│
+└── database/             # Database schema and migrations
+    ├── prisma/
+    │   ├── schema.prisma
+    │   └── migrations/
+    └── seeds/            # Database seed data
+
+packages/
+├── shared/               # Shared types and utilities
+│   ├── types/           # Common TypeScript types
+│   └── utils/           # Shared utility functions
+└── ui/                  # Shared UI components
+    ├── components/      # Reusable UI components
+    └── styles/          # Global styles and themes
 ```
 
 ## Commands
@@ -18,7 +50,8 @@ npm test && npm run lint
 TypeScript 5.0+, Node.js 18+: Follow standard conventions
 
 ## Recent Changes
-- 001-hovawart-breeder-database: Added TypeScript 5.0+, Node.js 18+ + Next.js 14, React 18, Prisma ORM, PostgreSQL
+- 001-hovawart-breeder-database: Added TypeScript 5.0+, Node.js 18+ + Next.js 14, React 18, Prisma ORM, PostgreSQL, Redis, Jest, React Testing Library, Playwright
+- 001-hovawart-breeder-database: Updated project structure to monorepo with apps/ and packages/
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

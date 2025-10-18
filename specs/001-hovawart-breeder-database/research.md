@@ -1,176 +1,260 @@
 # Research: Hovawart-Züchterdatenbank
 
+**Feature**: Hovawart-Züchterdatenbank mit öffentlicher Suchfunktion  
 **Date**: 2024-12-19  
-**Feature**: Hovawart-Züchterdatenbank mit öffentlicher Suchfunktion
+**Status**: Complete
 
 ## Technology Stack Decisions
 
-### Frontend Framework
-**Decision**: Next.js 14 mit App Router  
-**Rationale**: 
-- Server-Side Rendering für bessere SEO (wichtig für öffentliche Suchfunktion)
-- Built-in API Routes für Backend-Integration
-- TypeScript Support out-of-the-box
+### Frontend Framework: Next.js 14
+
+**Decision**: Next.js 14 mit App Router für das Frontend
+
+**Rationale**:
+- Server-Side Rendering (SSR) für bessere SEO-Performance bei öffentlicher Suchfunktion
+- App Router bietet moderne Routing-Lösung mit besseren Performance-Charakteristiken
+- Integrierte API-Routes für Backend-Funktionalität
+- TypeScript-Support out-of-the-box
 - Große Community und umfangreiche Dokumentation
-- Optimierte Performance für Web-Anwendungen
 
-**Alternatives considered**: 
-- React mit Vite (weniger SEO-freundlich)
-- Vue.js (kleinere Community für deutsche Projekte)
-- SvelteKit (weniger etabliert)
+**Alternatives considered**:
+- **React SPA**: Verworfen wegen schlechterer SEO-Performance
+- **Vue.js**: Verworfen wegen geringerer Adoption in der deutschen Entwicklergemeinschaft
+- **SvelteKit**: Verworfen wegen kleinerer Ökosystem-Größe
 
-### Backend Framework
-**Decision**: Next.js API Routes mit Prisma ORM  
+### Backend: Next.js API Routes + Prisma
+
+**Decision**: Next.js API Routes mit Prisma ORM für Backend-Logik
+
 **Rationale**:
-- Einheitlicher Tech Stack (Frontend + Backend)
+- Einheitliche Technologie-Stack (Full-Stack Next.js)
 - Prisma bietet type-safe Database Access
-- Automatische API-Dokumentation möglich
+- Automatische Migration-Generierung
+- Integrierte Query-Optimierung
 - Einfache Deployment-Strategie
-- Gute Performance für mittlere Skalierung
 
 **Alternatives considered**:
-- Express.js (zusätzliche Komplexität)
-- FastAPI (Python, nicht TypeScript)
-- NestJS (Overkill für dieses Projekt)
+- **Express.js**: Verworfen wegen zusätzlicher Komplexität bei Deployment
+- **tRPC**: Verworfen wegen Overhead für einfache CRUD-Operationen
+- **GraphQL**: Verworfen wegen Overkill für einfache Datenbank-Operationen
 
-### Database
-**Decision**: PostgreSQL 15+  
+### Database: PostgreSQL 15+
+
+**Decision**: PostgreSQL als primäre Datenbank
+
 **Rationale**:
-- ACID-Compliance für Datenintegrität
-- JSON-Support für flexible Stammbaumdaten
-- Volltextsuche für Suchfunktion
-- Skalierbarkeit für 500+ Hunde
-- Open Source und kostenlos
+- ACID-Compliance für kritische Zuchtdaten
+- JSON-Support für flexible Datenstrukturen
+- Volltext-Suche für erweiterte Suchfunktionen
+- Geospatial-Features für Karten-Integration
+- Bewährte Performance und Skalierbarkeit
 
 **Alternatives considered**:
-- MySQL (weniger JSON-Support)
-- MongoDB (keine ACID-Transaktionen)
-- SQLite (nicht für Multi-User geeignet)
+- **MySQL**: Verworfen wegen geringerer JSON-Unterstützung
+- **MongoDB**: Verworfen wegen fehlender ACID-Garantien
+- **SQLite**: Verworfen wegen fehlender Multi-User-Unterstützung
 
-### Authentication
-**Decision**: NextAuth.js mit JWT  
+### Session Management: Redis
+
+**Decision**: Redis für Session-Management und Caching
+
 **Rationale**:
-- Integriert mit Next.js
-- Unterstützt verschiedene Provider
-- Session-Management out-of-the-box
-- Rollenbasierte Zugriffe möglich
-- Sichere JWT-Implementierung
+- Schnelle In-Memory-Performance
+- Automatische Session-Expiration
+- Caching für häufige Suchanfragen
+- Skalierbare Session-Storage
 
 **Alternatives considered**:
-- Auth0 (kostenpflichtig)
-- Firebase Auth (Google-Abhängigkeit)
-- Custom JWT (mehr Entwicklungsaufwand)
+- **Database Sessions**: Verworfen wegen Performance-Impact
+- **JWT**: Verworfen wegen fehlender Revocation-Möglichkeiten
+- **Memory Store**: Verworfen wegen fehlender Persistenz
 
-### Testing Framework
-**Decision**: Jest + React Testing Library + Playwright  
+### Testing: Jest + React Testing Library + Playwright
+
+**Decision**: Jest für Unit-Tests, RTL für Component-Tests, Playwright für E2E-Tests
+
 **Rationale**:
-- Jest: Standard für JavaScript/TypeScript
-- React Testing Library: Best Practice für React-Tests
-- Playwright: Moderne E2E-Testing-Lösung
-- Gute Integration mit Next.js
-- Cross-Browser Testing möglich
+- Jest: Bewährte JavaScript-Testing-Lösung mit TypeScript-Support
+- React Testing Library: Best Practices für React-Component-Testing
+- Playwright: Moderne E2E-Testing-Lösung mit Cross-Browser-Support
 
 **Alternatives considered**:
-- Vitest (noch nicht so etabliert)
-- Cypress (teurer, weniger Performance)
-- Puppeteer (nur Chrome)
+- **Vitest**: Verworfen wegen geringerer Reife
+- **Cypress**: Verworfen wegen Playwright's besserer Performance
+- **Enzyme**: Verworfen wegen veralteter Testing-Patterns
 
 ## Architecture Patterns
 
-### Data Model Pattern
-**Decision**: Entity-Relationship Model mit Prisma  
-**Rationale**:
-- Klare Trennung zwischen Entitäten (Hund, Züchter, Stammbaum)
-- Type-safe Database Queries
-- Automatische Migrationen
-- Intuitive Beziehungen zwischen Entitäten
+### Monorepo Structure
 
-### API Design Pattern
-**Decision**: RESTful API mit OpenAPI Documentation  
-**Rationale**:
-- Standard für Web-APIs
-- Einfache Integration mit Frontend
-- Automatische Dokumentation möglich
-- Caching-Strategien implementierbar
+**Decision**: Monorepo mit separaten Apps und geteilten Packages
 
-### Security Pattern
-**Decision**: Role-Based Access Control (RBAC)  
 **Rationale**:
-- Klare Trennung zwischen öffentlichen und privaten Bereichen
-- Skalierbar für verschiedene Benutzertypen
-- Einfache Implementierung mit NextAuth.js
-- Audit-Trail möglich
+- Geteilte Typen und Utilities zwischen Frontend und Backend
+- Einheitliche Dependency-Management
+- Vereinfachte CI/CD-Pipeline
+- Code-Reuse zwischen verschiedenen Apps
 
-## Performance Optimizations
+**Structure**:
+```
+apps/
+├── web/          # Next.js Frontend
+├── api/          # Backend API (optional, falls separate API gewünscht)
+└── database/     # Database schema und migrations
 
-### Database Indexing
-**Decision**: Indizes für Suchfelder (Name, Rasse, Züchter)  
+packages/
+├── shared/       # Shared types und utilities
+└── ui/          # Shared UI components
+```
+
+### Authentication: Role-Based Access Control (RBAC)
+
+**Decision**: RBAC mit JWT-Tokens und Redis-Session-Storage
+
 **Rationale**:
-- <2s Suchresultate garantieren
-- Effiziente Filterung nach Kriterien
-- Skalierbarkeit für 500+ Hunde
+- Flexible Rollenverwaltung (BREEDER, STUD_OWNER, ADMIN, MEMBER, EDITOR)
+- Stateless Authentication mit JWT
+- Session-Revocation über Redis
+- Granulare Berechtigungen pro Ressource
+
+**Roles**:
+- **BREEDER**: Kann eigene Hunde verwalten
+- **STUD_OWNER**: Kann eigene Deckrüden verwalten
+- **ADMIN**: Vollzugriff auf alle Funktionen
+- **MEMBER**: Read-Only Zugriff auf eigene Hunde
+- **EDITOR**: Kann alle Hunde anzeigen und bearbeiten (nicht löschen)
+
+### Data Model: Normalized Relational Design
+
+**Decision**: Normalisierte relationale Datenbank mit Prisma ORM
+
+**Rationale**:
+- Referentielle Integrität für Zuchtdaten
+- Effiziente Abfragen mit Joins
+- Type-Safe Database Access
+- Automatische Migration-Generierung
+
+**Key Entities**:
+- **User**: Benutzer mit Rollen und Adressdaten
+- **Dog**: Hunde mit Stammbaum-Referenzen
+- **HealthRecord**: Gesundheitsdaten
+- **MedicalFinding**: Medizinische Befunde
+- **Award**: Auszeichnungen
+- **GeneticTest**: Genetische Untersuchungen
+
+### Search: Full-Text Search mit PostgreSQL
+
+**Decision**: PostgreSQL Full-Text Search für öffentliche Suchfunktion
+
+**Rationale**:
+- Integrierte Lösung ohne zusätzliche Dependencies
+- Gute Performance für mittlere Datenmengen (500+ Hunde)
+- Flexible Suchkriterien
+- Ranking und Relevanz-Scoring
+
+**Search Features**:
+- Name-Suche
+- Geschlecht-Filter
+- Alter-Bereich
+- Farbe-Filter
+- Züchter-Suche
+- Geografische Suche (PLZ-basiert)
+
+## Performance Considerations
+
+### Database Optimization
+
+**Decision**: Strategische Indizierung und Query-Optimierung
+
+**Rationale**:
+- Schnelle Suchresultate (<2s)
+- Effiziente Stammbaum-Abfragen
+- Skalierbare Performance
+
+**Indexes**:
+- Composite indexes für häufige Suchkombinationen
+- Full-text indexes für Name-Suche
+- Geospatial indexes für PLZ-basierte Suche
 
 ### Caching Strategy
-**Decision**: Redis für Session-Cache, Browser-Cache für statische Daten  
+
+**Decision**: Redis-basiertes Caching für häufige Abfragen
+
 **Rationale**:
 - Reduzierte Database-Load
-- Bessere User Experience
-- Skalierbarkeit für 50+ gleichzeitige Benutzer
+- Schnellere Response-Times
+- Skalierbare Performance
 
-### Frontend Optimization
-**Decision**: Server-Side Rendering + Static Generation  
+**Cache Keys**:
+- `search:{query_hash}`: Suchresultate
+- `dog:{id}`: Hundeprofile
+- `user:{id}`: Benutzerdaten
+
+## Security Considerations
+
+### Data Privacy
+
+**Decision**: Öffentliche Sichtbarkeit aller Hundedaten (einschließlich Kontaktdaten)
+
 **Rationale**:
-- Bessere SEO für öffentliche Suchfunktion
-- Schnellere Initial Load Times
-- Optimierte Core Web Vitals
+- Anforderung aus der Spezifikation
+- Transparenz in der Züchtergemeinschaft
+- Vereinfachte Suchfunktion
+
+**Security Measures**:
+- Input-Validierung und Sanitization
+- SQL-Injection-Schutz durch Prisma
+- XSS-Schutz durch React
+- Rate-Limiting für API-Endpoints
+
+### Access Control
+
+**Decision**: Granulare Berechtigungen basierend auf Benutzerrollen
+
+**Rationale**:
+- Schutz vor unbefugten Änderungen
+- Rollenbasierte Datenverwaltung
+- Audit-Trail für Änderungen
 
 ## Deployment Strategy
 
-### Hosting Platform
-**Decision**: Vercel für Frontend, Railway/Render für Backend  
-**Rationale**:
-- Vercel: Optimiert für Next.js
-- Einfache CI/CD Pipeline
-- Automatische Deployments
-- Kostenlose Tier verfügbar
+### Platform: Vercel + Railway/PlanetScale
 
-### Database Hosting
-**Decision**: Supabase oder PlanetScale  
+**Decision**: Vercel für Frontend, Railway/PlanetScale für Backend und Database
+
 **Rationale**:
-- Managed PostgreSQL
-- Automatische Backups
-- Skalierbarkeit
-- Developer-friendly Tools
+- Nahtlose Next.js-Integration mit Vercel
+- Automatische Deployments
+- Skalierbare Infrastructure
+- Managed Database-Service
+
+**Alternatives considered**:
+- **Docker**: Verworfen wegen zusätzlicher Komplexität
+- **AWS**: Verworfen wegen Overkill für mittlere Anwendung
+- **Self-hosted**: Verworfen wegen Wartungsaufwand
 
 ## Monitoring and Observability
 
-### Logging
-**Decision**: Structured Logging mit Winston  
-**Rationale**:
-- Einheitliche Log-Formate
-- Einfache Integration mit Monitoring-Tools
-- Debugging-freundlich
+### Logging: Structured Logging mit Winston
 
-### Error Tracking
-**Decision**: Sentry Integration  
-**Rationale**:
-- Real-time Error Monitoring
-- Performance Monitoring
-- User Impact Tracking
-- Einfache Integration mit Next.js
+**Decision**: Winston für strukturiertes Logging
 
-## Compliance and Security
-
-### Data Protection
-**Decision**: DSGVO-konforme Implementierung  
 **Rationale**:
-- Deutsche Züchter als Zielgruppe
-- Rechtliche Compliance erforderlich
-- Datenschutz-by-Design
+- JSON-Format für bessere Parsing
+- Verschiedene Log-Levels
+- Integration mit Monitoring-Tools
 
-### Security Measures
-**Decision**: HTTPS, Input Validation, Rate Limiting  
+### Error Tracking: Sentry
+
+**Decision**: Sentry für Error-Tracking und Performance-Monitoring
+
 **Rationale**:
-- Schutz vor Common Vulnerabilities
-- Rate Limiting für API-Schutz
-- Input Validation für Datenintegrität
+- Automatische Error-Erkennung
+- Performance-Monitoring
+- User-Impact-Analyse
+
+## Conclusion
+
+Die gewählte Technologie-Stack bietet eine ausgewogene Mischung aus Performance, Entwicklerfreundlichkeit und Skalierbarkeit. Next.js als Full-Stack-Framework reduziert die Komplexität, während PostgreSQL und Redis die Performance-Anforderungen erfüllen. Die RBAC-Implementierung bietet flexible Berechtigungen für verschiedene Benutzertypen.
+
+**Next Steps**: Implementation der Data Model und API Contracts in Phase 1.

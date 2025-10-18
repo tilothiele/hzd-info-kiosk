@@ -1,0 +1,29 @@
+{
+  "name": "hovawart-breeder-database",
+  "version": "1.0.0",
+  "description": "Hovawart-Züchterdatenbank mit öffentlicher Suchfunktion",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "clean": "turbo run clean",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.12",
+    "@types/node": "^20.8.0",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=16.13.0",
+    "npm": ">=8.0.0"
+  },
+  "packageManager": "npm@9.8.1"
+}
