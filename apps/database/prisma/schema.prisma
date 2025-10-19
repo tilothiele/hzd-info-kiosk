@@ -12,21 +12,26 @@ datasource db {
 
 // Models
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  firstName   String
-  lastName    String
-  phone       String?
-  address     String?
-  postalCode  String?
-  city        String?
-  country     String   @default("Deutschland")
-  latitude    Decimal?
-  longitude   Decimal?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
+  password        String
+  firstName       String
+  lastName        String
+  memberNumber    String?  @unique
+  avatarUrl       String?
+  memberSince     DateTime?
+  phone           String?
+  address         String?
+  postalCode      String?
+  city            String?
+  country         String   @default("Deutschland")
+  latitude        Decimal?
+  longitude       Decimal?
+  website         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relationships
   dogs        Dog[]
@@ -74,6 +79,7 @@ model Dog {
   motherId       String?
   fatherId       String?
   litterNumber   String?
+  website        String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

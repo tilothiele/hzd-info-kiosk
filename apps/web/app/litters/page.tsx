@@ -1,4 +1,4 @@
-import { formatDate } from '@hovawart-db/shared'
+import { formatDate } from '../../../../packages/shared/src/utils'
 
 export default function LittersPage() {
 	// Mock-Daten für Würfe

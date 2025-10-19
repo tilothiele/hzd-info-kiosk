@@ -1,4 +1,4 @@
-// Erweiterte Mock-Daten für 9 Züchter
+// Erweiterte Mock-Daten für Züchter und Deckrüdenbesitzer
 export const breeders = [
 	{
 		id: 1,
@@ -10,6 +10,8 @@ export const breeders = [
 		litters: 12,
 		contact: 'max.mustermann@email.de',
 		phone: '+49 89 12345678',
+		website: 'https://www.hovawart-muenchen.de',
+		roles: ['BREEDER', 'STUD_OWNER'],
 		mainImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=300&fit=crop&crop=face',
@@ -27,6 +29,8 @@ export const breeders = [
 		litters: 8,
 		contact: 'anna.schmidt@email.de',
 		phone: '+49 40 98765432',
+		website: 'https://www.hovawart-hamburg.de',
+		roles: ['BREEDER'],
 		mainImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
@@ -44,6 +48,8 @@ export const breeders = [
 		litters: 18,
 		contact: 'peter.weber@email.de',
 		phone: '+49 221 55555555',
+		website: 'https://www.hovawart-koeln.de',
+		roles: ['BREEDER', 'STUD_OWNER'],
 		mainImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
@@ -61,6 +67,8 @@ export const breeders = [
 		litters: 6,
 		contact: 'maria.fischer@email.de',
 		phone: '+49 711 33333333',
+		website: 'https://www.hovawart-stuttgart.de',
+		roles: ['BREEDER'],
 		mainImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop&crop=face',
@@ -78,6 +86,8 @@ export const breeders = [
 		litters: 22,
 		contact: 'jens.lehmann@email.de',
 		phone: '+49 30 44444444',
+		website: 'https://www.hovawart-berlin.de',
+		roles: ['STUD_OWNER'],
 		mainImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
@@ -146,11 +156,107 @@ export const breeders = [
 		litters: 16,
 		contact: 'thomas.mueller@email.de',
 		phone: '+49 351 99999999',
+		roles: ['STUD_OWNER'],
 		mainImage: 'https://images.unsplash.com/photo-1599566150163-29194d698670?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1599566150163-29194d698670?w=400&h=300&fit=crop&crop=face',
 			'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=300&fit=crop&crop=face',
 			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face'
+		],
+	},
+	// Neue Deckrüdenbesitzer
+	{
+		id: 10,
+		name: 'Klaus Hoffmann',
+		location: 'Frankfurt, Hessen',
+		experience: '18 Jahre',
+		specialization: 'Arbeitslinie',
+		dogs: 3,
+		litters: 0,
+		contact: 'klaus.hoffmann@email.de',
+		phone: '+49 69 11111111',
+		website: 'https://www.hovawart-frankfurt.de',
+		roles: ['STUD_OWNER'],
+		mainImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop&crop=face',
+		gallery: [
+			'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face'
+		],
+	},
+	{
+		id: 11,
+		name: 'Monika Schulz',
+		location: 'Nürnberg, Bayern',
+		experience: '14 Jahre',
+		specialization: 'Showlinie',
+		dogs: 2,
+		litters: 0,
+		contact: 'monika.schulz@email.de',
+		phone: '+49 911 22222222',
+		website: 'https://www.hovawart-nuernberg.de',
+		roles: ['STUD_OWNER'],
+		mainImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop&crop=face',
+		gallery: [
+			'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=300&fit=crop&crop=face'
+		],
+	},
+	{
+		id: 12,
+		name: 'Andreas Richter',
+		location: 'Hannover, Niedersachsen',
+		experience: '20 Jahre',
+		specialization: 'Arbeitslinie',
+		dogs: 4,
+		litters: 0,
+		contact: 'andreas.richter@email.de',
+		phone: '+49 511 33333333',
+		website: 'https://www.hovawart-hannover.de',
+		roles: ['STUD_OWNER'],
+		mainImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
+		gallery: [
+			'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop&crop=face'
+		],
+	},
+	{
+		id: 13,
+		name: 'Christine Lange',
+		location: 'Leipzig, Sachsen',
+		experience: '16 Jahre',
+		specialization: 'Showlinie',
+		dogs: 1,
+		litters: 0,
+		contact: 'christine.lange@email.de',
+		phone: '+49 341 44444444',
+		roles: ['STUD_OWNER'],
+		mainImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop&crop=face',
+		gallery: [
+			'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=300&fit=crop&crop=face'
+		],
+	},
+	{
+		id: 14,
+		name: 'Stefan Bauer',
+		location: 'Düsseldorf, Nordrhein-Westfalen',
+		experience: '12 Jahre',
+		specialization: 'Arbeitslinie',
+		dogs: 2,
+		litters: 0,
+		contact: 'stefan.bauer@email.de',
+		phone: '+49 211 55555555',
+		website: 'https://www.hovawart-duesseldorf.de',
+		roles: ['STUD_OWNER'],
+		mainImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
+		gallery: [
+			'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop&crop=face',
+			'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop&crop=face'
 		],
 	},
 ]

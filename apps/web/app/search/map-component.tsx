@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { useEffect } from 'react'
-import { formatDate } from '@hovawart-db/shared'
+import { formatDate } from '../../../../packages/shared/src/utils'
 
 // Fix für Leaflet Icons
 delete (L.Icon.Default.prototype as any)._getIconUrl

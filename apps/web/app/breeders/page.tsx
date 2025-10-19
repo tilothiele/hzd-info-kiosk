@@ -45,8 +45,8 @@ export default function BreedersPage() {
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">Hovawart-Züchter</h1>
-					<p className="text-gray-600">Entdecken Sie unsere qualifizierten Hovawart-Züchter</p>
+					<h1 className="text-3xl font-bold text-gray-900 mb-2">Hovawart-Züchter & Deckrüdenbesitzer</h1>
+					<p className="text-gray-600">Entdecken Sie unsere qualifizierten Hovawart-Züchter und Deckrüdenbesitzer</p>
 				</div>
 
 				{/* Züchter-Grid */}
@@ -66,6 +66,27 @@ export default function BreedersPage() {
 							<div className="p-6">
 								<div className="mb-4">
 									<h3 className="text-xl font-semibold text-gray-900 mb-2">{breeder.name}</h3>
+									
+									{/* Rollen-Badges */}
+									<div className="flex flex-wrap gap-2 mb-3">
+										{breeder.roles?.includes('BREEDER') && (
+											<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+												<svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+													<path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+												</svg>
+												Züchter
+											</span>
+										)}
+										{breeder.roles?.includes('STUD_OWNER') && (
+											<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+												<svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+													<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+												</svg>
+												Deckrüdenbesitzer
+											</span>
+										)}
+									</div>
+									
 									<div className="flex items-center text-gray-600 mb-2">
 										<MapPinIcon className="h-4 w-4 mr-2" />
 										<span className="text-sm">{breeder.location}</span>
@@ -175,7 +196,24 @@ export default function BreedersPage() {
 													<UserIcon className="h-5 w-5 text-gray-400 mr-3" />
 													<div>
 														<div className="font-medium text-gray-900">{selectedBreeder.name}</div>
-														<div className="text-sm text-gray-500">Züchter</div>
+														<div className="flex flex-wrap gap-2 mt-1">
+															{selectedBreeder.roles?.includes('BREEDER') && (
+																<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+																	<svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+																		<path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+																	</svg>
+																	Züchter
+																</span>
+															)}
+															{selectedBreeder.roles?.includes('STUD_OWNER') && (
+																<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+																	<svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+																		<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+																	</svg>
+																	Deckrüdenbesitzer
+																</span>
+															)}
+														</div>
 													</div>
 												</div>
 												<div className="flex items-center">
@@ -192,6 +230,24 @@ export default function BreedersPage() {
 														<div className="text-sm text-gray-500">Erfahrung</div>
 													</div>
 												</div>
+												{selectedBreeder.website && (
+													<div className="flex items-center">
+														<svg className="h-5 w-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+														</svg>
+														<div>
+															<a
+																href={selectedBreeder.website}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+															>
+																Website besuchen
+															</a>
+															<div className="text-sm text-gray-500">Züchter-Website</div>
+														</div>
+													</div>
+												)}
 											</div>
 										</div>
 										

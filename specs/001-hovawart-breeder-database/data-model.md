@@ -12,10 +12,14 @@
 
 **Fields**:
 - `id`: UUID (Primary Key)
+- `username`: String (Unique, Required, für Login)
 - `email`: String (Unique, Required)
 - `password`: String (Hashed, Required)
 - `firstName`: String (Required)
 - `lastName`: String (Required)
+- `memberNumber`: String (Optional, Unique, HZD-Format)
+- `avatarUrl`: String (Optional, URL zum Profilbild)
+- `memberSince`: DateTime (Optional, Datum der Mitgliedschaft)
 - `phone`: String (Optional)
 - `address`: String (Optional)
 - `postalCode`: String (Optional)
@@ -23,6 +27,7 @@
 - `country`: String (Optional, Default: "Deutschland")
 - `latitude`: Decimal (Optional, für Geolocation)
 - `longitude`: Decimal (Optional, für Geolocation)
+- `website`: String (Optional, URL zur Website des Benutzers)
 - `isActive`: Boolean (Default: true)
 - `createdAt`: DateTime
 - `updatedAt`: DateTime
@@ -33,8 +38,12 @@
 - One-to-Many: `userRoles` (User kann mehrere Rollen haben)
 
 **Validation Rules**:
+- Username muss eindeutig sein und mindestens 3 Zeichen haben
 - Email muss gültiges Format haben
-- Password mindestens 8 Zeichen
+- Password mindestens 8 Zeichen, wird gehashed gespeichert
+- MemberNumber muss eindeutig sein und HZD-Format haben (HZD-XXX)
+- AvatarUrl muss gültige URL sein oder leer
+- MemberSince muss gültiges Datum sein
 - User muss mindestens eine Rolle haben
 - PostalCode muss gültiges deutsches PLZ-Format haben (5 Ziffern)
 - Latitude muss zwischen -90 und 90 liegen
@@ -88,6 +97,7 @@
 - `motherId`: UUID (Foreign Key to Dog, Optional)
 - `fatherId`: UUID (Foreign Key to Dog, Optional)
 - `litterNumber`: String (Optional, max 10 Zeichen)
+- `website`: String (Optional, URL zur Website des Hundes)
 - `createdAt`: DateTime
 - `updatedAt`: DateTime
 

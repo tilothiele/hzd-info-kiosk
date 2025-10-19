@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import authRoutes from './routes/auth'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -27,6 +28,75 @@ app.get('/api/status', (req, res) => {
     message: 'Hovawart API is running',
     version: '1.0.0'
   })
+})
+
+// Authentication routes
+app.use('/api/auth', authRoutes)
+
+// Statistics endpoint
+app.get('/api/statistics', (req, res) => {
+  // Mock data - in production this would come from the database
+  const stats = {
+    totalDogs: 2847,
+    activeBreeders: 156,
+    availableStudDogs: 23,
+    healthTests: 8421,
+    totalLitters: 1247,
+    registeredUsers: 89
+  }
+  
+  res.json(stats)
+})
+
+// Activities endpoint
+app.get('/api/activities', (req, res) => {
+  // Mock data - in production this would come from the database
+  const activities = [
+    {
+      id: 1,
+      type: 'dog_registered',
+      message: '5 neue Hunde registriert',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      icon: 'CircleStackIcon'
+    },
+    {
+      id: 2,
+      type: 'breeder_joined',
+      message: '2 neue Züchter beigetreten',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+      icon: 'UsersIcon'
+    },
+    {
+      id: 3,
+      type: 'stud_available',
+      message: '1 Deckrüde verfügbar',
+      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+      icon: 'HeartIcon'
+    },
+    {
+      id: 4,
+      type: 'health_updated',
+      message: '12 Gesundheitsdaten aktualisiert',
+      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+      icon: 'ShieldCheckIcon'
+    },
+    {
+      id: 5,
+      type: 'litter_announced',
+      message: '3 neue Würfe angekündigt',
+      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+      icon: 'CalendarIcon'
+    },
+    {
+      id: 6,
+      type: 'website_updated',
+      message: '7 Züchter-Websites aktualisiert',
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      icon: 'GlobeAltIcon'
+    }
+  ]
+  
+  res.json(activities)
 })
 
 // 404 Handler

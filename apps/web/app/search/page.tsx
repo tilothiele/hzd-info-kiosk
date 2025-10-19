@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { allDogs } from './dog-data'
-import { getGenderDisplay, formatDate } from '@hovawart-db/shared'
+import { getGenderDisplay, formatDate } from '../../../../packages/shared/src/utils'
 import {
 	MagnifyingGlassIcon,
 	FunnelIcon,
@@ -295,7 +295,33 @@ export default function SearchPage() {
 		owner: '',
 		healthTests: false
 	})
-	const [filteredDogs, setFilteredDogs] = useState(dogs)
+	const [filteredDogs, setFilteredDogs] = useState<any[]>([])
+
+	// URL-Parameter beim Mount lesen und automatisch suchen
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			const urlParams = new URLSearchParams(window.location.search)
+			const breederParam = urlParams.get('breeder')
+			if (breederParam) {
+				const newFilters = {
+					name: '',
+					gender: '',
+					color: '',
+					stud: '',
+					owner: breederParam,
+					healthTests: false
+				}
+				setSearchFilters(newFilters)
+
+				// Automatisch die Suche ausführen
+				const results = dogs.filter(dog => dog.owner === breederParam)
+				setFilteredDogs(results)
+			} else {
+				// Wenn kein URL-Parameter vorhanden ist, alle Hunde anzeigen
+				setFilteredDogs(dogs)
+			}
+		}
+	}, [])
 	const [showToast, setShowToast] = useState(false)
 	const [toastMessage, setToastMessage] = useState('')
 
@@ -556,6 +582,9 @@ export default function SearchPage() {
 											Besitzer
 										</th>
 										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Website
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 											Standort
 										</th>
 										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -596,6 +625,23 @@ export default function SearchPage() {
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{dog.owner}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+												{dog.website ? (
+													<a
+														href={dog.website}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-blue-600 hover:text-blue-800 hover:underline flex items-center"
+													>
+														<svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+														</svg>
+														Website
+													</a>
+												) : (
+													<span className="text-gray-400">-</span>
+												)}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												<div className="flex items-center">
@@ -731,7 +777,7 @@ export default function SearchPage() {
 								</button>
 
 								{Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-									let pageNum
+									let pageNum: number
 									if (totalPages <= 5) {
 										pageNum = i + 1
 									} else if (currentPage <= 3) {

@@ -88,7 +88,9 @@ FROM base AS web
 
 # Kopiere Web Files
 COPY apps/web/package*.json ./apps/web/
+COPY apps/web/app ./apps/web/app/
 COPY apps/web/src ./apps/web/src/
+COPY apps/web/lib ./apps/web/lib/
 COPY apps/web/public ./apps/web/public/
 COPY apps/web/next.config.js ./apps/web/
 COPY apps/web/tsconfig.json ./apps/web/
@@ -103,8 +105,15 @@ COPY packages/ui/package*.json ./packages/ui/
 COPY packages/ui/src ./packages/ui/src/
 COPY packages/ui/tsconfig.json ./packages/ui/
 
-# Installiere Production Dependencies
+# Installiere alle Dependencies für Build
+WORKDIR /app
+RUN npm ci
+
+# Baue die Next.js App
 WORKDIR /app/apps/web
+RUN npm run build
+
+# Installiere nur Production Dependencies
 RUN npm ci --only=production
 
 # Expose Web Port

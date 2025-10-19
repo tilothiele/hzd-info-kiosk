@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 // Base schemas
+export const usernameSchema = z.string().min(3, 'Benutzername muss mindestens 3 Zeichen haben').max(50, 'Benutzername darf maximal 50 Zeichen haben')
 export const emailSchema = z.string().email('Ungültige E-Mail-Adresse')
 export const passwordSchema = z.string().min(8, 'Passwort muss mindestens 8 Zeichen haben')
 export const postalCodeSchema = z.string().regex(/^\d{5}$/, 'PLZ muss 5 Ziffern haben')
@@ -9,10 +10,14 @@ export const uuidSchema = z.string().uuid('Ungültige UUID')
 
 // User validation schemas
 export const createUserSchema = z.object({
+  username: usernameSchema,
   email: emailSchema,
   password: passwordSchema,
   firstName: z.string().min(1, 'Vorname ist erforderlich'),
   lastName: z.string().min(1, 'Nachname ist erforderlich'),
+  memberNumber: z.string().optional(),
+  avatarUrl: z.string().url('Ungültige Avatar-URL').optional().or(z.literal('')),
+  memberSince: z.date().optional(),
   phone: phoneSchema,
   address: z.string().optional(),
   postalCode: postalCodeSchema.optional(),
@@ -20,6 +25,7 @@ export const createUserSchema = z.object({
   country: z.string().default('Deutschland'),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
   roles: z.array(z.enum(['BREEDER', 'STUD_OWNER', 'ADMIN', 'MEMBER', 'EDITOR'])).min(1, 'Mindestens eine Rolle erforderlich')
 })
 
@@ -33,11 +39,12 @@ export const updateUserSchema = z.object({
   country: z.string().optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
   isActive: z.boolean().optional()
 })
 
 export const loginSchema = z.object({
-  email: emailSchema,
+  username: z.string().min(1, 'Benutzername ist erforderlich'),
   password: z.string().min(1, 'Passwort ist erforderlich')
 })
 
@@ -54,7 +61,8 @@ export const createDogSchema = z.object({
   description: z.string().optional(),
   motherId: uuidSchema.optional(),
   fatherId: uuidSchema.optional(),
-  litterNumber: z.string().max(10, 'Wurfnummer darf maximal 10 Zeichen haben').optional()
+  litterNumber: z.string().max(10, 'Wurfnummer darf maximal 10 Zeichen haben').optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal(''))
 }).refine((data) => {
   if (data.deathDate && data.birthDate) {
     return data.deathDate > data.birthDate
@@ -78,6 +86,7 @@ export const updateDogSchema = z.object({
   motherId: uuidSchema.optional(),
   fatherId: uuidSchema.optional(),
   litterNumber: z.string().max(10).optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
   isActive: z.boolean().optional()
 })
 

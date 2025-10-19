@@ -1,9 +1,13 @@
 // Core entity types
 export interface User {
   id: string
+  username: string
   email: string
   firstName: string
   lastName: string
+  memberNumber?: string
+  avatarUrl?: string
+  memberSince?: Date
   phone?: string
   address?: string
   postalCode?: string
@@ -11,6 +15,7 @@ export interface User {
   country: string
   latitude?: number
   longitude?: number
+  website?: string
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -47,6 +52,7 @@ export interface Dog {
   motherId?: string
   fatherId?: string
   litterNumber?: string
+  website?: string
   createdAt: Date
   updatedAt: Date
   owner?: User

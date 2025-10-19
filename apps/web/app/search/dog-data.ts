@@ -14,6 +14,7 @@ export const dogs = [
 		isStudAvailable: false,
 		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei', 'IC-frei'],
 		coordinates: [49.9929, 8.2473] as [number, number],
+		website: 'https://www.hovawart-vom-harz.de',
 		mainImage: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face',
@@ -35,6 +36,7 @@ export const dogs = [
 		isStudAvailable: true,
 		healthTests: ['HD-A1', 'ED-0', 'PRA-frei', 'DM-frei', 'VWD-frei'],
 		coordinates: [53.0793, 8.8017] as [number, number],
+		website: 'https://www.balu-vom-neckar.de',
 		mainImage: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=300&fit=crop&crop=face',
 		gallery: [
 			'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=300&fit=crop&crop=face',
