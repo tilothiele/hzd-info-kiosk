@@ -496,6 +496,7 @@ model Litter {
   fatherId        String?
   breederId       String
   litterNumber    String
+  litterSequence  String?  // A-Wurf, B-Wurf, C-Wurf, etc. - laufende Nummer des Wurfes eines Zwingers
   plannedDate     DateTime?
   expectedDate    DateTime?
   actualDate      DateTime?

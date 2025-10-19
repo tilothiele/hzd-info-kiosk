@@ -23,7 +23,7 @@ COPY .npmrc ./
 FROM base AS deps
 
 # Installiere Dependencies für alle Workspaces
-RUN npm ci --only=production --ignore-scripts
+RUN npm install --only=production --ignore-scripts --legacy-peer-deps
 
 # Stage 3: Build Stage
 FROM base AS builder
@@ -32,7 +32,7 @@ FROM base AS builder
 COPY . .
 
 # Installiere alle Dependencies (inkl. devDependencies)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Generiere Prisma Client
 WORKDIR /app/apps/database
@@ -51,7 +51,7 @@ COPY apps/database/prisma ./apps/database/prisma/
 
 # Installiere Database Dependencies
 WORKDIR /app/apps/database
-RUN npm ci --only=production
+RUN npm install --only=production --legacy-peer-deps
 
 # Generiere Prisma Client
 RUN npx prisma generate
@@ -69,9 +69,20 @@ COPY packages/shared/package*.json ./packages/shared/
 COPY packages/shared/src ./packages/shared/src/
 COPY packages/shared/tsconfig.json ./packages/shared/
 
-# Installiere Production Dependencies
-WORKDIR /app/apps/api
-RUN npm ci --only=production
+# Kopiere Database Files für Prisma Client Generation
+COPY apps/database/package*.json ./apps/database/
+COPY apps/database/prisma ./apps/database/prisma/
+
+# Installiere alle Dependencies (inkl. devDependencies für tsx)
+WORKDIR /app
+RUN npm install --legacy-peer-deps
+
+# Installiere neueste tsx Version global und lokal
+RUN npm install -g tsx@latest
+RUN npm install tsx@latest --legacy-peer-deps
+
+# Generiere Prisma Client
+RUN npx prisma generate --schema=apps/database/prisma/schema.prisma
 
 # Expose API Port
 EXPOSE 3001
@@ -81,6 +92,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
 # Start API
+WORKDIR /app/apps/api
 CMD ["npm", "start"]
 
 # Stage 6: Web Production
@@ -107,14 +119,14 @@ COPY packages/ui/tsconfig.json ./packages/ui/
 
 # Installiere alle Dependencies für Build
 WORKDIR /app
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Baue die Next.js App
 WORKDIR /app/apps/web
 RUN npm run build
 
 # Installiere nur Production Dependencies
-RUN npm ci --only=production
+RUN npm install --only=production --legacy-peer-deps
 
 # Expose Web Port
 EXPOSE 3000
@@ -131,7 +143,7 @@ FROM base AS development
 
 # Installiere alle Dependencies
 COPY . .
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Generiere Prisma Client
 WORKDIR /app/apps/database
@@ -153,7 +165,7 @@ COPY apps/database/prisma ./apps/database/prisma/
 
 # Installiere Dependencies
 WORKDIR /app/apps/database
-RUN npm ci --only=production
+RUN npm install --only=production --legacy-peer-deps
 
 # Generiere Prisma Client
 RUN npx prisma generate

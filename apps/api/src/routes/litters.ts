@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { PrismaClient } from '@prisma/client'
 
+const prisma = new PrismaClient()
 const router = Router()
 
 // Validation schemas
@@ -43,251 +45,211 @@ const updateLitterSchema = z.object({
   location: z.string().optional()
 })
 
-// Mock-Daten für Würfe (entsprechend der Frontend-Daten)
-const mockLitters = [
-	{
-		id: '1',
-		motherId: 'mother-1',
-		fatherId: 'father-1',
-		breederId: 'breeder-1',
-		litterNumber: 'W-2024-001',
-		plannedDate: new Date('2024-06-15'),
-		expectedDate: new Date('2024-06-15'),
-		actualDate: new Date('2024-06-12'),
-		status: 'AVAILABLE',
-		expectedPuppies: 6,
-		actualPuppies: 5,
-		puppyColors: {
-			'Schwarz': { born: 2, available: 1 },
-			'Blond': { born: 2, available: 1 },
-			'Schwarzmarken': { born: 1, available: 1 }
-		}, // Welpenfarben mit geboren/verfügbar
-		av: 8.5, // Ahnenverlustkoeffizient in %
-		iz: 3.2, // Inzuchtkoeffizient in %
-		description: 'Wunderschöner Wurf aus bewährter Zuchtlinie. Beide Elterntiere sind HD/ED-frei und haben ausgezeichnete Wesensmerkmale.',
-		isPublic: true,
-		contactInfo: 'max.mustermann@email.de',
-		price: 1200,
-		location: 'München, Bayern',
-		website: 'https://www.hovawart-muenchen.de/wurf-2024-001',
-		imageUrl: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop&crop=face',
-		createdAt: new Date('2024-01-15'),
-		updatedAt: new Date('2024-06-12'),
-		mother: {
-			id: 'mother-1',
-			name: 'Bella vom Schwarzen Wald',
-			gender: 'H'
-		},
-		father: {
-			id: 'father-1',
-			name: 'Thor von der Eifel',
-			gender: 'R'
-		},
-		breeder: {
-			id: 'breeder-1',
-			firstName: 'Max',
-			lastName: 'Mustermann',
-			email: 'max.mustermann@email.de',
-			kennelName: 'vom Schwarzen Wald'
-		}
-	},
-	{
-		id: '2',
-		motherId: 'mother-2',
-		fatherId: 'father-2',
-		breederId: 'breeder-2',
-		litterNumber: 'W-2024-002',
-		plannedDate: new Date('2024-08-20'),
-		expectedDate: new Date('2024-08-20'),
-		actualDate: null,
-		status: 'PLANNED',
-		expectedPuppies: 7,
-		actualPuppies: null,
-		av: 12.3, // Ahnenverlustkoeffizient in %
-		iz: 4.7, // Inzuchtkoeffizient in %
-		description: 'Geplanter Wurf für Herbst 2024. Mutter ist eine sehr ruhige und ausgeglichene Hündin, Vater ist ein erfahrener Deckrüde.',
-		isPublic: true,
-		contactInfo: 'anna.schmidt@email.de',
-		price: 1100,
-		location: 'Hamburg, Hamburg',
-		website: 'https://www.hovawart-hamburg.de/geplanter-wurf-2024',
-		imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face',
-		createdAt: new Date('2024-02-10'),
-		updatedAt: new Date('2024-02-10'),
-		mother: {
-			id: 'mother-2',
-			name: 'Luna aus dem Harz',
-			gender: 'H'
-		},
-		father: {
-			id: 'father-2',
-			name: 'Rex vom Bodensee',
-			gender: 'R'
-		},
-		breeder: {
-			id: 'breeder-2',
-			firstName: 'Anna',
-			lastName: 'Schmidt',
-			email: 'anna.schmidt@email.de',
-			kennelName: 'aus dem Harz'
-		}
-	},
-	{
-		id: '3',
-		motherId: 'mother-3',
-		fatherId: 'father-3',
-		breederId: 'breeder-3',
-		litterNumber: 'W-2024-003',
-		plannedDate: new Date('2024-05-10'),
-		expectedDate: new Date('2024-05-10'),
-		actualDate: new Date('2024-05-08'),
-		status: 'RESERVED',
-		expectedPuppies: 5,
-		actualPuppies: 6,
-		puppyColors: {
-			'Schwarzmarken': { born: 4, available: 0 },
-			'Blond': { born: 2, available: 0 }
-		}, // Welpenfarben mit geboren/verfügbar
-		av: 6.8, // Ahnenverlustkoeffizient in %
-		iz: 2.1, // Inzuchtkoeffizient in %
-		description: 'Alle Welpen sind bereits reserviert. Wurf ist geboren und entwickelt sich prächtig.',
-		isPublic: true,
-		contactInfo: 'peter.weber@email.de',
-		price: 1300,
-		location: 'Köln, Nordrhein-Westfalen',
-		website: 'https://www.hovawart-koeln.de/wurf-2024-003',
-		imageUrl: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop&crop=face',
-		createdAt: new Date('2024-01-20'),
-		updatedAt: new Date('2024-05-08'),
-		mother: {
-			id: 'mother-3',
-			name: 'Nala von der Mosel',
-			gender: 'H'
-		},
-		father: {
-			id: 'father-3',
-			name: 'Zeus aus dem Schwarzwald',
-			gender: 'R'
-		},
-		breeder: {
-			id: 'breeder-3',
-			firstName: 'Peter',
-			lastName: 'Weber',
-			email: 'peter.weber@email.de',
-			kennelName: 'von der Mosel'
-		}
-	},
-	{
-		id: '4',
-		motherId: 'mother-4',
-		fatherId: 'father-4',
-		breederId: 'breeder-4',
-		litterNumber: 'W-2024-004',
-		plannedDate: new Date('2024-07-30'),
-		expectedDate: new Date('2024-07-30'),
-		actualDate: new Date('2024-07-28'),
-		status: 'AVAILABLE',
-		expectedPuppies: 6,
-		actualPuppies: 4,
-		puppyColors: {
-			'Schwarz': { born: 3, available: 1 },
-			'Schwarzmarken': { born: 1, available: 1 }
-		}, // Welpenfarben mit geboren/verfügbar
-		av: 9.7, // Ahnenverlustkoeffizient in %
-		iz: 3.8, // Inzuchtkoeffizient in %
-		description: 'Kleiner aber feiner Wurf. Beide Elterntiere stammen aus Arbeitslinien und haben ausgezeichnete Arbeitsleistungen.',
-		isPublic: true,
-		contactInfo: 'maria.fischer@email.de',
-		price: 1150,
-		location: 'Stuttgart, Baden-Württemberg',
-		website: 'https://www.hovawart-stuttgart.de/wurf-2024-004',
-		imageUrl: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop&crop=face',
-		createdAt: new Date('2024-03-05'),
-		updatedAt: new Date('2024-07-28'),
-		mother: {
-			id: 'mother-4',
-			name: 'Maya vom Neckar',
-			gender: 'H'
-		},
-		father: {
-			id: 'father-4',
-			name: 'Apollo aus dem Odenwald',
-			gender: 'R'
-		},
-		breeder: {
-			id: 'breeder-4',
-			firstName: 'Maria',
-			lastName: 'Fischer',
-			email: 'maria.fischer@email.de',
-			kennelName: 'vom Neckar'
-		}
-	}
-]
+// Hilfsfunktion für Datumsformatierung
+function formatDate(date: Date): string {
+	return date.toLocaleDateString('de-DE', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	})
+}
 
 // GET /api/litters - Alle öffentlichen Würfe abrufen
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
 	try {
-		const { status, location, year } = req.query
+		// Filter-Parameter aus Query-String
+		const { status, location, date, breeder } = req.query
 
-		let filteredLitters = mockLitters.filter(litter => litter.isPublic)
+		// Prisma Query Builder
+		const where: any = {
+			isPublic: true
+		}
 
-		// Filter nach Status
+		// Status-Filter
 		if (status) {
 			const statusMap: Record<string, string> = {
 				'verfügbar': 'AVAILABLE',
 				'geplant': 'PLANNED',
 				'reserviert': 'RESERVED',
-				'verkauft': 'SOLD'
+				'verkauft': 'SOLD',
+				'geboren': 'BORN'
 			}
-			const mappedStatus = statusMap[status as string]
-			if (mappedStatus) {
-				filteredLitters = filteredLitters.filter(litter => litter.status === mappedStatus)
-			}
+			where.status = statusMap[status.toString().toLowerCase()] || status.toString().toUpperCase()
 		}
 
-		// Filter nach Bundesland
+		// Standort-Filter
 		if (location) {
-			const locationMap: Record<string, string> = {
-				'bayern': 'Bayern',
-				'hamburg': 'Hamburg',
-				'nrw': 'Nordrhein-Westfalen',
-				'bw': 'Baden-Württemberg'
-			}
-			const mappedLocation = locationMap[location as string]
-			if (mappedLocation) {
-				filteredLitters = filteredLitters.filter(litter =>
-					litter.location?.includes(mappedLocation)
-				)
+			where.location = {
+				contains: location.toString(),
+				mode: 'insensitive'
 			}
 		}
 
-		// Filter nach Jahr
-		if (year) {
-			filteredLitters = filteredLitters.filter(litter => {
-				const litterYear = litter.actualDate?.getFullYear() || litter.expectedDate?.getFullYear()
-				return litterYear?.toString() === year
-			})
+		// Datum-Filter
+		if (date) {
+			where.OR = [
+				{
+					expectedDate: {
+						gte: new Date(`${date}-01-01`),
+						lt: new Date(`${parseInt(date.toString()) + 1}-01-01`)
+					}
+				},
+				{
+					actualDate: {
+						gte: new Date(`${date}-01-01`),
+						lt: new Date(`${parseInt(date.toString()) + 1}-01-01`)
+					}
+				}
+			]
 		}
 
-		res.json({
-			success: true,
-			data: filteredLitters,
-			total: filteredLitters.length
+		// Züchter-Filter
+		if (breeder) {
+			where.breeder = {
+				OR: [
+					{
+						firstName: {
+							contains: breeder.toString(),
+							mode: 'insensitive'
+						}
+					},
+					{
+						lastName: {
+							contains: breeder.toString(),
+							mode: 'insensitive'
+						}
+					}
+				]
+			}
+		}
+
+		const litters = await prisma.litter.findMany({
+			where,
+			include: {
+				mother: {
+					include: {
+						owner: true,
+						breeder: true,
+						awards: true
+					}
+				},
+				father: {
+					include: {
+						owner: true,
+						breeder: true,
+						awards: true
+					}
+				},
+				breeder: true
+			},
+			orderBy: {
+				expectedDate: 'desc'
+			}
 		})
+
+		// Daten für Frontend formatieren
+		const formattedLitters = litters.map(litter => ({
+			id: litter.id,
+			litterNumber: litter.litterNumber,
+			litterSequence: litter.litterSequence,
+			mother: litter.mother.name,
+			father: litter.father?.name || 'Unbekannt',
+			breeder: `${litter.breeder.firstName} ${litter.breeder.lastName}`,
+			breederKennelName: litter.breeder.kennelName,
+			location: litter.location,
+			status: litter.status,
+			price: litter.price,
+			date: litter.actualDate ? formatDate(litter.actualDate) : formatDate(litter.expectedDate),
+			expectedDate: litter.expectedDate?.toISOString().split('T')[0],
+			actualDate: litter.actualDate?.toISOString().split('T')[0],
+			expectedPuppies: litter.expectedPuppies,
+			actualPuppies: litter.actualPuppies,
+			availablePuppies: litter.actualPuppies || 0, // Vereinfacht
+			contact: litter.contactInfo?.split(',')[0] || '',
+			phone: litter.contactInfo?.split(',')[1]?.trim() || '',
+			website: litter.website,
+			imageUrl: litter.imageUrl,
+			motherId: litter.motherId,
+			fatherId: litter.fatherId,
+			// Besitzer-Informationen
+			motherOwner: {
+				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+				id: litter.mother.owner.id,
+				imageUrl: litter.mother.owner.avatarUrl
+			},
+			fatherOwner: litter.father ? {
+				name: `${litter.father.owner.firstName} ${litter.father.owner.lastName}`,
+				id: litter.father.owner.id,
+				imageUrl: litter.father.owner.avatarUrl
+			} : null,
+			// Züchter-Informationen
+			motherBreeder: {
+				name: `${litter.mother.breeder.firstName} ${litter.mother.breeder.lastName}`,
+				id: litter.mother.breeder.id,
+				imageUrl: litter.mother.breeder.avatarUrl,
+				kennelName: litter.mother.breeder.kennelName
+			},
+			fatherBreeder: litter.father ? {
+				name: `${litter.father.breeder.firstName} ${litter.father.breeder.lastName}`,
+				id: litter.father.breeder.id,
+				imageUrl: litter.father.breeder.avatarUrl,
+				kennelName: litter.father.breeder.kennelName
+			} : null,
+			// Hauptbilder der Elterntiere
+			motherImageUrl: litter.mother.imageUrl,
+			fatherImageUrl: litter.father?.imageUrl,
+			// Auszeichnungen
+			motherAwards: litter.mother.awards.map(award => ({
+				code: award.code,
+				description: award.description,
+				date: award.date?.toISOString().split('T')[0],
+				issuer: award.issuer
+			})),
+			fatherAwards: litter.father?.awards.map(award => ({
+				code: award.code,
+				description: award.description,
+				date: award.date?.toISOString().split('T')[0],
+				issuer: award.issuer
+			})) || [],
+			// Genetik-Daten
+			av: litter.av,
+			iz: litter.iz,
+			puppyColors: litter.puppyColors as any,
+			description: litter.description
+		}))
+
+		res.json(formattedLitters)
 	} catch (error) {
-		console.error('Error fetching litters:', error)
-		res.status(500).json({
-			success: false,
-			error: 'Fehler beim Abrufen der Würfe'
-		})
+		console.error('Fehler beim Abrufen der Würfe:', error)
+		res.status(500).json({ error: 'Fehler beim Abrufen der Würfe' })
 	}
 })
 
 // GET /api/litters/:id - Einzelnen Wurf abrufen
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
 	try {
 		const { id } = req.params
-		const litter = mockLitters.find(l => l.id === id)
+
+		const litter = await prisma.litter.findUnique({
+			where: { id },
+			include: {
+				mother: {
+					include: {
+						owner: true,
+						breeder: true,
+						awards: true
+					}
+				},
+				father: {
+					include: {
+						owner: true,
+						breeder: true,
+						awards: true
+					}
+				},
+				breeder: true
+			}
+		})
 
 		if (!litter) {
 			return res.status(404).json({
@@ -296,129 +258,180 @@ router.get('/:id', (req, res) => {
 			})
 		}
 
-		if (!litter.isPublic) {
-			return res.status(403).json({
+		// Daten für Frontend formatieren
+		const formattedLitter = {
+			id: litter.id,
+			litterNumber: litter.litterNumber,
+			litterSequence: litter.litterSequence,
+			mother: litter.mother.name,
+			father: litter.father?.name || 'Unbekannt',
+			breeder: `${litter.breeder.firstName} ${litter.breeder.lastName}`,
+			breederKennelName: litter.breeder.kennelName,
+			location: litter.location,
+			status: litter.status,
+			price: litter.price,
+			date: litter.actualDate ? formatDate(litter.actualDate) : formatDate(litter.expectedDate),
+			expectedDate: litter.expectedDate?.toISOString().split('T')[0],
+			actualDate: litter.actualDate?.toISOString().split('T')[0],
+			expectedPuppies: litter.expectedPuppies,
+			actualPuppies: litter.actualPuppies,
+			availablePuppies: litter.actualPuppies || 0,
+			contact: litter.contactInfo?.split(',')[0] || '',
+			phone: litter.contactInfo?.split(',')[1]?.trim() || '',
+			website: litter.website,
+			imageUrl: litter.imageUrl,
+			motherId: litter.motherId,
+			fatherId: litter.fatherId,
+			// Besitzer-Informationen
+			motherOwner: {
+				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+				id: litter.mother.owner.id,
+				imageUrl: litter.mother.owner.avatarUrl
+			},
+			fatherOwner: litter.father ? {
+				name: `${litter.father.owner.firstName} ${litter.father.owner.lastName}`,
+				id: litter.father.owner.id,
+				imageUrl: litter.father.owner.avatarUrl
+			} : null,
+			// Züchter-Informationen
+			motherBreeder: {
+				name: `${litter.mother.breeder.firstName} ${litter.mother.breeder.lastName}`,
+				id: litter.mother.breeder.id,
+				imageUrl: litter.mother.breeder.avatarUrl,
+				kennelName: litter.mother.breeder.kennelName
+			},
+			fatherBreeder: litter.father ? {
+				name: `${litter.father.breeder.firstName} ${litter.father.breeder.lastName}`,
+				id: litter.father.breeder.id,
+				imageUrl: litter.father.breeder.avatarUrl,
+				kennelName: litter.father.breeder.kennelName
+			} : null,
+			// Hauptbilder der Elterntiere
+			motherImageUrl: litter.mother.imageUrl,
+			fatherImageUrl: litter.father?.imageUrl,
+			// Auszeichnungen
+			motherAwards: litter.mother.awards.map(award => ({
+				code: award.code,
+				description: award.description,
+				date: award.date?.toISOString().split('T')[0],
+				issuer: award.issuer
+			})),
+			fatherAwards: litter.father?.awards.map(award => ({
+				code: award.code,
+				description: award.description,
+				date: award.date?.toISOString().split('T')[0],
+				issuer: award.issuer
+			})) || [],
+			// Genetik-Daten
+			av: litter.av,
+			iz: litter.iz,
+			puppyColors: litter.puppyColors as any,
+			description: litter.description
+		}
+
+		res.json({
+			success: true,
+			data: formattedLitter
+		})
+	} catch (error) {
+		console.error('Fehler beim Abrufen des Wurfes:', error)
+		res.status(500).json({
+			success: false,
+			error: 'Fehler beim Abrufen des Wurfes'
+		})
+	}
+})
+
+// POST /api/litters - Neuen Wurf erstellen
+router.post('/', async (req, res) => {
+	try {
+		const validatedData = createLitterSchema.parse(req.body)
+
+		const litter = await prisma.litter.create({
+			data: validatedData,
+			include: {
+				mother: true,
+				father: true,
+				breeder: true
+			}
+		})
+
+		res.status(201).json({
+			success: true,
+			data: litter
+		})
+	} catch (error) {
+		if (error instanceof z.ZodError) {
+			return res.status(400).json({
 				success: false,
-				error: 'Zugriff verweigert'
+				error: 'Validierungsfehler',
+				details: error.errors
 			})
 		}
+
+		console.error('Fehler beim Erstellen des Wurfes:', error)
+		res.status(500).json({
+			success: false,
+			error: 'Fehler beim Erstellen des Wurfes'
+		})
+	}
+})
+
+// PUT /api/litters/:id - Wurf aktualisieren
+router.put('/:id', async (req, res) => {
+	try {
+		const { id } = req.params
+		const validatedData = updateLitterSchema.parse(req.body)
+
+		const litter = await prisma.litter.update({
+			where: { id },
+			data: validatedData,
+			include: {
+				mother: true,
+				father: true,
+				breeder: true
+			}
+		})
 
 		res.json({
 			success: true,
 			data: litter
 		})
 	} catch (error) {
-		console.error('Error fetching litter:', error)
-		res.status(500).json({
-			success: false,
-			error: 'Fehler beim Abrufen des Wurfs'
-		})
-	}
-})
-
-// POST /api/litters - Neuen Wurf erstellen
-router.post('/', (req, res) => {
-	try {
-		const validatedData = createLitterSchema.parse(req.body)
-
-		// In einer echten Anwendung würde hier die Datenbank aktualisiert werden
-		const newLitter = {
-			id: Date.now().toString(),
-			...validatedData,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		}
-
-		res.status(201).json({
-			success: true,
-			data: newLitter,
-			message: 'Wurf erfolgreich erstellt'
-		})
-	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return res.status(400).json({
 				success: false,
-				error: 'Ungültige Eingabedaten',
+				error: 'Validierungsfehler',
 				details: error.errors
 			})
 		}
 
-		console.error('Error creating litter:', error)
+		console.error('Fehler beim Aktualisieren des Wurfes:', error)
 		res.status(500).json({
 			success: false,
-			error: 'Fehler beim Erstellen des Wurfs'
-		})
-	}
-})
-
-// PUT /api/litters/:id - Wurf aktualisieren
-router.put('/:id', (req, res) => {
-	try {
-		const { id } = req.params
-		const validatedData = updateLitterSchema.parse(req.body)
-
-		const litterIndex = mockLitters.findIndex(l => l.id === id)
-		if (litterIndex === -1) {
-			return res.status(404).json({
-				success: false,
-				error: 'Wurf nicht gefunden'
-			})
-		}
-
-		// In einer echten Anwendung würde hier die Datenbank aktualisiert werden
-		mockLitters[litterIndex] = {
-			...mockLitters[litterIndex],
-			...validatedData,
-			updatedAt: new Date()
-		}
-
-		res.json({
-			success: true,
-			data: mockLitters[litterIndex],
-			message: 'Wurf erfolgreich aktualisiert'
-		})
-	} catch (error) {
-		if (error instanceof z.ZodError) {
-			return res.status(400).json({
-				success: false,
-				error: 'Ungültige Eingabedaten',
-				details: error.errors
-			})
-		}
-
-		console.error('Error updating litter:', error)
-		res.status(500).json({
-			success: false,
-			error: 'Fehler beim Aktualisieren des Wurfs'
+			error: 'Fehler beim Aktualisieren des Wurfes'
 		})
 	}
 })
 
 // DELETE /api/litters/:id - Wurf löschen
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
 	try {
 		const { id } = req.params
-		const litterIndex = mockLitters.findIndex(l => l.id === id)
 
-		if (litterIndex === -1) {
-			return res.status(404).json({
-				success: false,
-				error: 'Wurf nicht gefunden'
-			})
-		}
-
-		// In einer echten Anwendung würde hier die Datenbank aktualisiert werden
-		mockLitters.splice(litterIndex, 1)
+		await prisma.litter.delete({
+			where: { id }
+		})
 
 		res.json({
 			success: true,
 			message: 'Wurf erfolgreich gelöscht'
 		})
 	} catch (error) {
-		console.error('Error deleting litter:', error)
+		console.error('Fehler beim Löschen des Wurfes:', error)
 		res.status(500).json({
 			success: false,
-			error: 'Fehler beim Löschen des Wurfs'
+			error: 'Fehler beim Löschen des Wurfes'
 		})
 	}
 })

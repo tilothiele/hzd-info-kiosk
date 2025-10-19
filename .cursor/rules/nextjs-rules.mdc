@@ -206,4 +206,6 @@ This comprehensive guide outlines best practices, conventions, and standards for
     - Use proper links
     - Use proper headings
     - Use proper lists
-    -
+
+    Mock data
+    - do not use mock data in frontend. always insert mock data into the database.

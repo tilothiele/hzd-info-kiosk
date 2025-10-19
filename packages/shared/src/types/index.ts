@@ -146,6 +146,7 @@ export interface Litter {
   fatherId?: string
   breederId: string
   litterNumber: string
+  litterSequence?: string  // A-Wurf, B-Wurf, C-Wurf, etc. - laufende Nummer des Wurfes eines Zwingers
   plannedDate?: Date
   expectedDate?: Date
   actualDate?: Date

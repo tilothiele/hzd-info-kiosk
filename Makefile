@@ -27,6 +27,11 @@ dev-stop: ## Stoppe Development Environment
 	@echo "🛑 Stopping development environment..."
 	docker-compose --profile development down
 
+load-testdata: ## Lade Testdaten in die Datenbank
+	@echo "📊 Loading test data into database..."
+	docker-compose exec postgres psql -U postgres -d hovawart_db -f /docker-entrypoint-initdb.d/test-data.sql
+	@echo "✅ Test data loaded successfully!"
+
 # =============================================================================
 # PRODUCTION COMMANDS
 # =============================================================================
@@ -49,7 +54,7 @@ prod-stop: ## Stoppe Production Environment
 
 build: ## Baue alle Docker Images
 	@echo "🔨 Building Docker images..."
-	docker-compose build
+	docker-compose build --progress=plain
 
 build-prod: ## Baue Production Images
 	@echo "🔨 Building production Docker images..."

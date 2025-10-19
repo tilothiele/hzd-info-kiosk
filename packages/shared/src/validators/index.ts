@@ -198,6 +198,7 @@ export const createLitterSchema = z.object({
   motherId: uuidSchema,
   fatherId: uuidSchema.optional(),
   litterNumber: z.string().min(1, 'Wurfnummer ist erforderlich').max(10, 'Wurfnummer darf maximal 10 Zeichen haben'),
+  litterSequence: z.string().min(1, 'Wurffolge ist erforderlich').max(10, 'Wurffolge darf maximal 10 Zeichen haben').optional(),
   plannedDate: z.date().optional(),
   expectedDate: z.date().optional(),
   actualDate: z.date().optional(),
@@ -231,6 +232,7 @@ export const createLitterSchema = z.object({
 export const updateLitterSchema = z.object({
   fatherId: uuidSchema.optional(),
   litterNumber: z.string().min(1).max(10).optional(),
+  litterSequence: z.string().min(1).max(10).optional(),
   plannedDate: z.date().optional(),
   expectedDate: z.date().optional(),
   actualDate: z.date().optional(),
