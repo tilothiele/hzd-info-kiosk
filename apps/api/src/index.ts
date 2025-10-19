@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import authRoutes from './routes/auth'
+import littersRoutes from './routes/litters'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -32,6 +33,9 @@ app.get('/api/status', (req, res) => {
 
 // Authentication routes
 app.use('/api/auth', authRoutes)
+
+// Litter routes
+app.use('/api/litters', littersRoutes)
 
 // Statistics endpoint
 app.get('/api/statistics', (req, res) => {

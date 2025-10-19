@@ -18,6 +18,7 @@ interface User {
 	city?: string
 	country?: string
 	website?: string
+	kennelName?: string
 	isActive: boolean
 	createdAt: Date
 	updatedAt: Date

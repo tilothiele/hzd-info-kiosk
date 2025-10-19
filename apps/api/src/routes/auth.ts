@@ -23,6 +23,7 @@ const mockUsers = [
     city: 'Musterstadt',
     country: 'Deutschland',
     website: 'https://admin.hovawart.de',
+    kennelName: null, // Admin hat keinen Zwingername
     roles: ['ADMIN'],
     isActive: true,
     createdAt: new Date('2020-01-15'),
@@ -44,6 +45,7 @@ const mockUsers = [
     city: 'Hundestadt',
     country: 'Deutschland',
     website: 'https://zuechter1.hovawart.de',
+    kennelName: 'vom Schwarzen Wald', // Zwingername für Züchter
     roles: ['BREEDER'],
     isActive: true,
     createdAt: new Date('2022-03-10'),
@@ -105,6 +107,7 @@ router.post('/login', async (req, res) => {
         city: user.city,
         country: user.country,
         website: user.website,
+        kennelName: user.kennelName,
         isActive: user.isActive,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,

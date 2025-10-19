@@ -274,12 +274,25 @@ const getDogType = (dog: any) => {
 	if (dog.isStudAvailable) {
 		return { type: 'stud', label: 'Deckrüde', color: 'green', icon: '♂' }
 	}
-	// Für Zuchthündinnen: weibliche Hunde, die potenziell für die Zucht geeignet sind
-	// (hier vereinfacht: alle Hündinnen über 2 Jahren)
-	if (dog.gender === 'H') {
-		const age = (new Date().getTime() - new Date(dog.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-		if (age >= 2) {
-			return { type: 'breeding', label: 'Zuchthündin', color: 'purple', icon: '♀' }
+	// Für Zuchthündinnen: weibliche Hunde mit breedingStatus
+	if (dog.gender === 'H' && dog.breedingStatus) {
+		const statusLabels: Record<string, string> = {
+			'VERSTORBEN': 'Verstorben',
+			'NICHT_VERFUEGBAR': 'Nicht verfügbar',
+			'WURF_GEPLANT': 'Wurf geplant',
+			'WURF_VORHANDEN': 'Wurf vorhanden'
+		}
+		const statusColors: Record<string, string> = {
+			'VERSTORBEN': 'gray',
+			'NICHT_VERFUEGBAR': 'red',
+			'WURF_GEPLANT': 'blue',
+			'WURF_VORHANDEN': 'purple'
+		}
+		return { 
+			type: 'breeding', 
+			label: statusLabels[dog.breedingStatus] || 'Zuchthündin', 
+			color: statusColors[dog.breedingStatus] || 'purple', 
+			icon: '♀' 
 		}
 	}
 	return null // Kein Status für normale Hunde

@@ -28,6 +28,7 @@
 - `latitude`: Decimal (Optional, für Geolocation)
 - `longitude`: Decimal (Optional, für Geolocation)
 - `website`: String (Optional, URL zur Website des Benutzers)
+- `kennelName`: String (Optional, Zwingername - nur für Züchter)
 - `isActive`: Boolean (Default: true)
 - `createdAt`: DateTime
 - `updatedAt`: DateTime
@@ -48,6 +49,7 @@
 - PostalCode muss gültiges deutsches PLZ-Format haben (5 Ziffern)
 - Latitude muss zwischen -90 und 90 liegen
 - Longitude muss zwischen -180 und 180 liegen
+- KennelName ist optional und nur für Benutzer mit Züchter-Rolle relevant
 - Wenn Latitude gesetzt ist, muss auch Longitude gesetzt sein
 
 **Access Control Rules**:
@@ -487,6 +489,49 @@ model StudService {
   @@index([isAvailable])
   @@map("stud_services")
 }
+
+model Litter {
+  id              String   @id @default(uuid())
+  motherId        String
+  fatherId        String?
+  breederId       String
+  litterNumber    String
+  plannedDate     DateTime?
+  expectedDate    DateTime?
+  actualDate      DateTime?
+  status          String   @default("PLANNED") // PLANNED, IN_PROGRESS, BORN, AVAILABLE, RESERVED, SOLD, CANCELLED
+  expectedPuppies Int?
+  actualPuppies   Int?
+  puppyColors     Json?    // {"Schwarz": {"born": 2, "available": 1}, "Blond": {"born": 1, "available": 0}} - nur für BORN/RESERVED/SOLD
+  av              Decimal? // Ahnenverlustkoeffizient in %
+  iz              Decimal? // Inzuchtkoeffizient in %
+  description     String?
+  isPublic        Boolean  @default(true)
+  contactInfo     String?
+  price           Decimal?
+  location        String?
+  website         String?  // Optionaler Link zur externen Website
+  imageUrl        String?  // Optionales Bild des Wurfs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relationships
+  mother   Dog   @relation("LitterMother", fields: [motherId], references: [id])
+  father   Dog?  @relation("LitterFather", fields: [fatherId], references: [id])
+  breeder  User  @relation(fields: [breederId], references: [id])
+  puppies  Dog[] @relation("LitterPuppies")
+
+  // Indexes
+  @@index([motherId])
+  @@index([fatherId])
+  @@index([breederId])
+  @@index([status])
+  @@index([isPublic])
+  @@index([litterNumber])
+  @@index([expectedDate])
+  @@index([actualDate])
+  @@map("litters")
+}
 ```
 
 ## State Transitions
@@ -500,6 +545,21 @@ model StudService {
 - **Available**: Deckdienst ist verfügbar
 - **Unavailable**: Deckdienst ist temporär nicht verfügbar
 - **Inactive**: Deckdienst ist deaktiviert
+
+### Litter States
+- **PLANNED**: Wurf ist geplant
+- **IN_PROGRESS**: Deckung hat stattgefunden, Wurf wird erwartet
+- **BORN**: Welpen sind geboren
+- **AVAILABLE**: Welpen sind verfügbar
+- **RESERVED**: Alle Welpen sind reserviert
+- **SOLD**: Alle Welpen sind verkauft
+- **CANCELLED**: Wurf wurde abgebrochen
+
+### Breeding Status (nur für Hündinnen)
+- **VERSTORBEN**: Hündin ist verstorben
+- **NICHT_VERFUEGBAR**: Hündin ist nicht für die Zucht verfügbar
+- **WURF_GEPLANT**: Ein Wurf ist geplant
+- **WURF_VORHANDEN**: Ein Wurf ist vorhanden/bereits geboren
 
 ### User States
 - **Active**: Benutzer kann sich anmelden

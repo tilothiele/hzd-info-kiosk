@@ -225,6 +225,17 @@ export default function ProfilePage() {
 										</div>
 									)}
 
+									{user.kennelName && user.roles.includes('BREEDER') && (
+										<div>
+											<label className="block text-sm font-medium text-gray-700 mb-1">
+												Zwingername
+											</label>
+											<div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-900">
+												{user.kennelName}
+											</div>
+										</div>
+									)}
+
 									{(user.address || user.city || user.postalCode) && (
 										<div className="md:col-span-2">
 											<label className="block text-sm font-medium text-gray-700 mb-1">

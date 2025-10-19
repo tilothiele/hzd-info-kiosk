@@ -26,6 +26,7 @@ export const createUserSchema = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  kennelName: z.string().min(1, 'Zwingername muss mindestens 1 Zeichen haben').max(100, 'Zwingername darf maximal 100 Zeichen haben').optional(),
   roles: z.array(z.enum(['BREEDER', 'STUD_OWNER', 'ADMIN', 'MEMBER', 'EDITOR'])).min(1, 'Mindestens eine Rolle erforderlich')
 })
 
@@ -40,6 +41,7 @@ export const updateUserSchema = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  kennelName: z.string().min(1, 'Zwingername muss mindestens 1 Zeichen haben').max(100, 'Zwingername darf maximal 100 Zeichen haben').optional(),
   isActive: z.boolean().optional()
 })
 
@@ -62,7 +64,8 @@ export const createDogSchema = z.object({
   motherId: uuidSchema.optional(),
   fatherId: uuidSchema.optional(),
   litterNumber: z.string().max(10, 'Wurfnummer darf maximal 10 Zeichen haben').optional(),
-  website: z.string().url('Ungültige Website-URL').optional().or(z.literal(''))
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  breedingStatus: z.enum(['VERSTORBEN', 'NICHT_VERFUEGBAR', 'WURF_GEPLANT', 'WURF_VORHANDEN']).optional()
 }).refine((data) => {
   if (data.deathDate && data.birthDate) {
     return data.deathDate > data.birthDate
@@ -71,6 +74,15 @@ export const createDogSchema = z.object({
 }, {
   message: 'Todesdatum muss nach Geburtsdatum liegen',
   path: ['deathDate']
+}).refine((data) => {
+  // breedingStatus ist nur für Hündinnen (H) erlaubt
+  if (data.breedingStatus && data.gender !== 'H') {
+    return false
+  }
+  return true
+}, {
+  message: 'Zuchtstatus ist nur für Hündinnen erlaubt',
+  path: ['breedingStatus']
 })
 
 export const updateDogSchema = z.object({
@@ -87,6 +99,7 @@ export const updateDogSchema = z.object({
   fatherId: uuidSchema.optional(),
   litterNumber: z.string().max(10).optional(),
   website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  breedingStatus: z.enum(['VERSTORBEN', 'NICHT_VERFUEGBAR', 'WURF_GEPLANT', 'WURF_VORHANDEN']).optional(),
   isActive: z.boolean().optional()
 })
 
@@ -191,11 +204,28 @@ export const createLitterSchema = z.object({
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).default('PLANNED'),
   expectedPuppies: z.number().positive().optional(),
   actualPuppies: z.number().positive().optional(),
+  puppyColors: z.record(z.string(), z.object({
+    born: z.number().min(0),
+    available: z.number().min(0)
+  })).optional(),
+  av: z.number().min(0).max(100).optional(),
+  iz: z.number().min(0).max(100).optional(),
   description: z.string().optional(),
   isPublic: z.boolean().default(true),
   contactInfo: z.string().optional(),
   price: z.number().positive().optional(),
-  location: z.string().optional()
+  location: z.string().optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  imageUrl: z.string().url('Ungültige Bild-URL').optional().or(z.literal(''))
+}).refine((data) => {
+  // puppyColors ist nur für BORN, RESERVED, SOLD erlaubt
+  if (data.puppyColors && !['BORN', 'RESERVED', 'SOLD'].includes(data.status)) {
+    return false
+  }
+  return true
+}, {
+  message: 'Welpenfarben sind nur für Status BORN, RESERVED oder SOLD erlaubt',
+  path: ['puppyColors']
 })
 
 export const updateLitterSchema = z.object({
@@ -207,11 +237,19 @@ export const updateLitterSchema = z.object({
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).optional(),
   expectedPuppies: z.number().positive().optional(),
   actualPuppies: z.number().positive().optional(),
+  puppyColors: z.record(z.string(), z.object({
+    born: z.number().min(0),
+    available: z.number().min(0)
+  })).optional(),
+  av: z.number().min(0).max(100).optional(),
+  iz: z.number().min(0).max(100).optional(),
   description: z.string().optional(),
   isPublic: z.boolean().optional(),
   contactInfo: z.string().optional(),
   price: z.number().positive().optional(),
-  location: z.string().optional()
+  location: z.string().optional(),
+  website: z.string().url('Ungültige Website-URL').optional().or(z.literal('')),
+  imageUrl: z.string().url('Ungültige Bild-URL').optional().or(z.literal(''))
 })
 
 // Search and filter validation schemas

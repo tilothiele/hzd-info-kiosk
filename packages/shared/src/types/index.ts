@@ -16,6 +16,7 @@ export interface User {
   latitude?: number
   longitude?: number
   website?: string
+  kennelName?: string  // Zwingername - nur für Züchter
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -53,6 +54,7 @@ export interface Dog {
   fatherId?: string
   litterNumber?: string
   website?: string
+  breedingStatus?: BreedingStatus // Nur für Hündinnen
   createdAt: Date
   updatedAt: Date
   owner?: User
@@ -150,11 +152,16 @@ export interface Litter {
   status: LitterStatus
   expectedPuppies?: number
   actualPuppies?: number
+  puppyColors?: Record<string, { born: number; available: number }> // {"Schwarz": {born: 2, available: 1}, "Blond": {born: 1, available: 0}} - nur für BORN/RESERVED/SOLD
+  av?: number // Ahnenverlustkoeffizient in %
+  iz?: number // Inzuchtkoeffizient in %
   description?: string
   isPublic: boolean
   contactInfo?: string
   price?: number
   location?: string
+  website?: string // Optionaler Link zur externen Website
+  imageUrl?: string // Optionales Bild des Wurfs
   createdAt: Date
   updatedAt: Date
   mother?: Dog
@@ -208,6 +215,13 @@ export enum LitterStatus {
   RESERVED = 'RESERVED',
   SOLD = 'SOLD',
   CANCELLED = 'CANCELLED'
+}
+
+export enum BreedingStatus {
+  VERSTORBEN = 'VERSTORBEN',
+  NICHT_VERFUEGBAR = 'NICHT_VERFUEGBAR',
+  WURF_GEPLANT = 'WURF_GEPLANT',
+  WURF_VORHANDEN = 'WURF_VORHANDEN'
 }
 
 // API Response types
