@@ -64,6 +64,7 @@ model Dog {
   color          String
   microchipId    String?  @unique
   pedigreeNumber String?  @unique
+  avatarUrl      String?
   isStudAvailable Boolean @default(false)
   isActive       Boolean  @default(true)
   description    String?

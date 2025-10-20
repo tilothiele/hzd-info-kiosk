@@ -672,10 +672,10 @@ export default function SearchPage() {
 									{currentDogs.map((dog) => (
 										<tr key={dog.id} className="hover:bg-gray-50">
 											<td className="px-6 py-4 whitespace-nowrap">
-												<div className="flex-shrink-0 h-16 w-16">
+                                                <div className="flex-shrink-0 h-16 w-16">
 													<img
-														className="h-16 w-16 rounded-lg object-cover border border-gray-200"
-														src={dog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face'}
+                                                        className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                                                        src={dog.avatarUrl || dog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face'}
 														alt={`${dog.name} - Hauptbild`}
 													/>
 												</div>
@@ -930,7 +930,7 @@ export default function SearchPage() {
 									<div>
                                     <img
 											className="w-full h-64 object-cover rounded-lg border border-gray-200"
-                                            src={selectedDog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=500&fit=crop&crop=face'}
+                                            src={selectedDog.avatarUrl || selectedDog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=500&fit=crop&crop=face'}
 											alt={`${selectedDog.name} - Hauptbild`}
 										/>
 									</div>
