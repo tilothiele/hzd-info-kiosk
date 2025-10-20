@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { breeders } from './breeder-data'
-import { 
+import { useState, useEffect } from 'react'
+import {
 	UserIcon,
 	MapPinIcon,
 	CalendarIcon,
@@ -12,11 +11,38 @@ import {
 	EyeIcon,
 	ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
+import BreederMap from './breeder-map'
 
 export default function BreedersPage() {
+	const [breeders, setBreeders] = useState<any[]>([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
 	const [selectedBreeder, setSelectedBreeder] = useState<any>(null)
 	const [showContactModal, setShowContactModal] = useState(false)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
+	const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+
+	// Daten von der API laden
+	useEffect(() => {
+		const fetchBreeders = async () => {
+			try {
+				const response = await fetch('http://localhost:3001/api/breeders')
+				if (response.ok) {
+					const data = await response.json()
+					setBreeders(data)
+				} else {
+					setError('Fehler beim Laden der Züchter')
+				}
+			} catch (error) {
+				setError('Fehler beim Laden der Züchter')
+				console.error('Fehler beim Laden der Züchter:', error)
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		fetchBreeders()
+	}, [])
 
 	// Handler-Funktionen
 	const handleContact = (breeder: any) => {
@@ -40,18 +66,79 @@ export default function BreedersPage() {
 		setSelectedBreeder(null)
 	}
 
+	if (loading) {
+		return (
+			<div className="min-h-screen bg-gray-50">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+					<div className="flex items-center justify-center h-64">
+						<div className="text-center">
+							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+							<p className="text-gray-600">Züchter werden geladen...</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
+	if (error) {
+		return (
+			<div className="min-h-screen bg-gray-50">
+				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+					<div className="flex items-center justify-center h-64">
+						<div className="text-center">
+							<div className="text-red-600 mb-4">
+								<svg className="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+								</svg>
+							</div>
+							<p className="text-gray-600">{error}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">Hovawart-Züchter & Deckrüdenbesitzer</h1>
-					<p className="text-gray-600">Entdecken Sie unsere qualifizierten Hovawart-Züchter und Deckrüdenbesitzer</p>
+					<div className="flex justify-between items-center mb-4">
+						<div>
+							<h1 className="text-3xl font-bold text-gray-900 mb-2">Hovawart-Züchter & Deckrüdenbesitzer</h1>
+							<p className="text-gray-600">Entdecken Sie unsere qualifizierten Hovawart-Züchter und Deckrüdenbesitzer</p>
+						</div>
+						<div className="flex space-x-2">
+							<button
+								onClick={() => setViewMode('grid')}
+								className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+									viewMode === 'grid'
+										? 'bg-blue-600 text-white'
+										: 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+								}`}
+							>
+								Grid
+							</button>
+							<button
+								onClick={() => setViewMode('map')}
+								className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+									viewMode === 'map'
+										? 'bg-blue-600 text-white'
+										: 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+								}`}
+							>
+								Karte
+							</button>
+						</div>
+					</div>
 				</div>
 
-				{/* Züchter-Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{breeders.map((breeder) => (
+				{/* Züchter-Grid oder Karte */}
+				{viewMode === 'grid' ? (
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{breeders.map((breeder) => (
 						<div key={breeder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
 							{/* Hauptbild */}
 							<div className="h-48 w-full overflow-hidden">
@@ -61,12 +148,16 @@ export default function BreedersPage() {
 									alt={`${breeder.name} - Hauptbild`}
 								/>
 							</div>
-							
+
 							{/* Züchter-Informationen */}
 							<div className="p-6">
 								<div className="mb-4">
+									{/* Zwingername oben */}
+									{breeder.kennelName && (
+										<h2 className="text-lg font-semibold text-blue-600 mb-2">{breeder.kennelName}</h2>
+									)}
 									<h3 className="text-xl font-semibold text-gray-900 mb-2">{breeder.name}</h3>
-									
+
 									{/* Rollen-Badges */}
 									<div className="flex flex-wrap gap-2 mb-3">
 										{breeder.roles?.includes('BREEDER') && (
@@ -86,7 +177,7 @@ export default function BreedersPage() {
 											</span>
 										)}
 									</div>
-									
+
 									<div className="flex items-center text-gray-600 mb-2">
 										<MapPinIcon className="h-4 w-4 mr-2" />
 										<span className="text-sm">{breeder.location}</span>
@@ -103,6 +194,47 @@ export default function BreedersPage() {
 										{breeder.specialization}
 									</span>
 								</div>
+
+								{/* Würfe mit Bildern */}
+								{breeder.littersWithImages && breeder.littersWithImages.length > 0 && (
+									<div className="mb-6">
+										<h4 className="text-sm font-medium text-gray-900 mb-3">Aktuelle Würfe</h4>
+										<div className="space-y-3">
+											{breeder.littersWithImages.map((litter: any) => (
+												<div key={litter.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+													<div className="flex-shrink-0">
+														<img
+															className="h-16 w-24 object-cover rounded-md"
+															src={litter.image}
+															alt={litter.title}
+														/>
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className="text-sm font-medium text-gray-900 truncate">{litter.title}</p>
+														<p className="text-xs text-gray-500 truncate">{litter.description}</p>
+														<div className="flex items-center mt-1">
+															<span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+																litter.status === 'BORN' ? 'bg-green-100 text-green-800' :
+																litter.status === 'PLANNED' ? 'bg-yellow-100 text-yellow-800' :
+																litter.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
+																'bg-gray-100 text-gray-800'
+															}`}>
+																{litter.status === 'BORN' ? 'Geboren' :
+																 litter.status === 'PLANNED' ? 'Geplant' :
+																 litter.status === 'RESERVED' ? 'Reserviert' :
+																 litter.status}
+															</span>
+															<span className="ml-2 text-xs text-gray-500">
+																{litter.puppies} Welpen
+																{litter.available > 0 && `, ${litter.available} verfügbar`}
+															</span>
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
 
 								{/* Statistiken */}
 								<div className="grid grid-cols-2 gap-4 mb-6">
@@ -136,7 +268,12 @@ export default function BreedersPage() {
 							</div>
 						</div>
 					))}
-				</div>
+					</div>
+				) : (
+					<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+						<BreederMap breeders={breeders} />
+					</div>
+				)}
 
 				{/* Züchter-Details Modal */}
 				{showDetailsModal && selectedBreeder && (
@@ -144,9 +281,15 @@ export default function BreedersPage() {
 						<div className="relative top-10 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
 							<div className="mt-3">
 								<div className="flex items-center justify-between mb-6">
-									<h3 className="text-2xl font-bold text-gray-900">
-										Züchter-Details: {selectedBreeder.name}
-									</h3>
+									<div>
+										{/* Zwingername oben */}
+										{selectedBreeder.kennelName && (
+											<h2 className="text-xl font-semibold text-blue-600 mb-1">{selectedBreeder.kennelName}</h2>
+										)}
+										<h3 className="text-2xl font-bold text-gray-900">
+											Züchter-Details: {selectedBreeder.name}
+										</h3>
+									</div>
 									<button
 										onClick={closeModal}
 										className="text-gray-400 hover:text-gray-600"
@@ -156,18 +299,18 @@ export default function BreedersPage() {
 										</svg>
 									</button>
 								</div>
-								
+
 								<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 									{/* Hauptbild und Galerie */}
 									<div>
 										<div className="mb-4">
 											<img
-												className="w-full h-80 object-cover rounded-lg border border-gray-200"
+												className="w-full h-96 object-cover rounded-lg border border-gray-200"
 												src={selectedBreeder.mainImage}
 												alt={`${selectedBreeder.name} - Hauptbild`}
 											/>
 										</div>
-										
+
 										{/* Bildergalerie */}
 										{selectedBreeder.gallery && selectedBreeder.gallery.length > 1 && (
 											<div>
@@ -185,7 +328,7 @@ export default function BreedersPage() {
 											</div>
 										)}
 									</div>
-									
+
 									{/* Züchter-Informationen */}
 									<div className="space-y-6">
 										{/* Grunddaten */}
@@ -250,7 +393,7 @@ export default function BreedersPage() {
 												)}
 											</div>
 										</div>
-										
+
 										{/* Spezialisierung */}
 										<div>
 											<h4 className="text-lg font-semibold text-gray-900 mb-3">Spezialisierung</h4>
@@ -258,7 +401,7 @@ export default function BreedersPage() {
 												{selectedBreeder.specialization}
 											</span>
 										</div>
-										
+
 										{/* Statistiken */}
 										<div>
 											<h4 className="text-lg font-semibold text-gray-900 mb-3">Zuchtstatistiken</h4>
@@ -273,7 +416,48 @@ export default function BreedersPage() {
 												</div>
 											</div>
 										</div>
-										
+
+										{/* Würfe mit Bildern */}
+										{selectedBreeder.littersWithImages && selectedBreeder.littersWithImages.length > 0 && (
+											<div>
+												<h4 className="text-lg font-semibold text-gray-900 mb-3">Aktuelle Würfe</h4>
+												<div className="space-y-4">
+													{selectedBreeder.littersWithImages.map((litter: any) => (
+														<div key={litter.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+															<div className="flex-shrink-0">
+																<img
+																	className="h-20 w-28 object-cover rounded-md"
+																	src={litter.image}
+																	alt={litter.title}
+																/>
+															</div>
+															<div className="flex-1 min-w-0">
+																<p className="text-sm font-medium text-gray-900 truncate">{litter.title}</p>
+																<p className="text-xs text-gray-500 truncate">{litter.description}</p>
+																<div className="flex items-center mt-2">
+																	<span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+																		litter.status === 'BORN' ? 'bg-green-100 text-green-800' :
+																		litter.status === 'PLANNED' ? 'bg-yellow-100 text-yellow-800' :
+																		litter.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
+																		'bg-gray-100 text-gray-800'
+																	}`}>
+																		{litter.status === 'BORN' ? 'Geboren' :
+																		 litter.status === 'PLANNED' ? 'Geplant' :
+																		 litter.status === 'RESERVED' ? 'Reserviert' :
+																		 litter.status}
+																	</span>
+																	<span className="ml-2 text-xs text-gray-500">
+																		{litter.puppies} Welpen
+																		{litter.available > 0 && `, ${litter.available} verfügbar`}
+																	</span>
+																</div>
+															</div>
+														</div>
+													))}
+												</div>
+											</div>
+										)}
+
 										{/* Kontaktdaten */}
 										<div>
 											<h4 className="text-lg font-semibold text-gray-900 mb-3">Kontaktdaten</h4>
@@ -296,7 +480,7 @@ export default function BreedersPage() {
 										</div>
 									</div>
 								</div>
-								
+
 								{/* Aktionsbuttons */}
 								<div className="mt-8 flex space-x-4">
 									<button
@@ -347,7 +531,7 @@ export default function BreedersPage() {
 										</svg>
 									</button>
 								</div>
-								
+
 								<div className="space-y-4">
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
@@ -358,7 +542,7 @@ export default function BreedersPage() {
 											<div className="text-xs text-gray-500 mt-1">{selectedBreeder.location}</div>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											E-Mail
@@ -368,7 +552,7 @@ export default function BreedersPage() {
 											<span className="text-gray-700">{selectedBreeder.contact}</span>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											Telefon
@@ -378,7 +562,7 @@ export default function BreedersPage() {
 											<span className="text-gray-700">{selectedBreeder.phone}</span>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											Spezialisierung
@@ -387,7 +571,7 @@ export default function BreedersPage() {
 											<span className="text-gray-700">{selectedBreeder.specialization}</span>
 										</div>
 									</div>
-									
+
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-1">
 											Erfahrung
@@ -397,15 +581,15 @@ export default function BreedersPage() {
 										</div>
 									</div>
 								</div>
-								
+
 								<div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
 									<h4 className="text-sm font-medium text-blue-800 mb-2">Kontaktinformationen</h4>
 									<p className="text-sm text-blue-700">
-										Für weitere Informationen und Kontaktaufnahme wenden Sie sich bitte direkt an den Züchter 
+										Für weitere Informationen und Kontaktaufnahme wenden Sie sich bitte direkt an den Züchter
 										oder nutzen Sie die offiziellen Kanäle des HZD.
 									</p>
 								</div>
-								
+
 								<div className="mt-6 flex space-x-3">
 									<button
 										onClick={closeModal}

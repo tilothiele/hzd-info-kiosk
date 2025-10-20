@@ -129,14 +129,12 @@ router.get('/', async (req, res) => {
 				mother: {
 					include: {
 						owner: true,
-						breeder: true,
 						awards: true
 					}
 				},
 				father: {
 					include: {
 						owner: true,
-						breeder: true,
 						awards: true
 					}
 				},
@@ -154,12 +152,15 @@ router.get('/', async (req, res) => {
 			litterSequence: litter.litterSequence,
 			mother: litter.mother.name,
 			father: litter.father?.name || 'Unbekannt',
-			breeder: `${litter.breeder.firstName} ${litter.breeder.lastName}`,
-			breederKennelName: litter.breeder.kennelName,
-			location: litter.location,
+			// Züchterin automatisch = Besitzerin der Mutterhündin
+			breeder: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+			breederKennelName: litter.mother.owner.kennelName,
+			location: litter.location || (litter.mother.owner.postalCode ? `${litter.mother.owner.city}, ${litter.mother.owner.postalCode}` : `${litter.mother.owner.city}, ${litter.mother.owner.country}`),
+			breederPostalCode: litter.mother.owner.postalCode,
+			breederCity: litter.mother.owner.city,
 			status: litter.status,
 			price: litter.price,
-			date: litter.actualDate ? formatDate(litter.actualDate) : formatDate(litter.expectedDate),
+			date: litter.actualDate ? formatDate(litter.actualDate) : (litter.expectedDate ? formatDate(litter.expectedDate) : ''),
 			expectedDate: litter.expectedDate?.toISOString().split('T')[0],
 			actualDate: litter.actualDate?.toISOString().split('T')[0],
 			expectedPuppies: litter.expectedPuppies,
@@ -167,8 +168,8 @@ router.get('/', async (req, res) => {
 			availablePuppies: litter.actualPuppies || 0, // Vereinfacht
 			contact: litter.contactInfo?.split(',')[0] || '',
 			phone: litter.contactInfo?.split(',')[1]?.trim() || '',
-			website: litter.website,
-			imageUrl: litter.imageUrl,
+			website: (litter as any).website,
+			imageUrl: (litter as any).imageUrl,
 			motherId: litter.motherId,
 			fatherId: litter.fatherId,
 			// Besitzer-Informationen
@@ -182,22 +183,22 @@ router.get('/', async (req, res) => {
 				id: litter.father.owner.id,
 				imageUrl: litter.father.owner.avatarUrl
 			} : null,
-			// Züchter-Informationen
+			// Züchter-Informationen: Besitzerin der Mutter
 			motherBreeder: {
-				name: `${litter.mother.breeder.firstName} ${litter.mother.breeder.lastName}`,
-				id: litter.mother.breeder.id,
-				imageUrl: litter.mother.breeder.avatarUrl,
-				kennelName: litter.mother.breeder.kennelName
+				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+				id: litter.mother.owner.id,
+				imageUrl: litter.mother.owner.avatarUrl,
+				kennelName: litter.mother.owner.kennelName
 			},
 			fatherBreeder: litter.father ? {
-				name: `${litter.father.breeder.firstName} ${litter.father.breeder.lastName}`,
-				id: litter.father.breeder.id,
-				imageUrl: litter.father.breeder.avatarUrl,
-				kennelName: litter.father.breeder.kennelName
+				name: `${litter.father.owner.firstName} ${litter.father.owner.lastName}`,
+				id: litter.father.owner.id,
+				imageUrl: litter.father.owner.avatarUrl,
+				kennelName: litter.father.owner.kennelName
 			} : null,
 			// Hauptbilder der Elterntiere
-			motherImageUrl: litter.mother.imageUrl,
-			fatherImageUrl: litter.father?.imageUrl,
+			motherImageUrl: (litter.mother as any).imageUrl,
+			fatherImageUrl: (litter.father as any)?.imageUrl,
 			// Auszeichnungen
 			motherAwards: litter.mother.awards.map(award => ({
 				code: award.code,
@@ -236,14 +237,12 @@ router.get('/:id', async (req, res) => {
 				mother: {
 					include: {
 						owner: true,
-						breeder: true,
 						awards: true
 					}
 				},
 				father: {
 					include: {
 						owner: true,
-						breeder: true,
 						awards: true
 					}
 				},
@@ -265,12 +264,13 @@ router.get('/:id', async (req, res) => {
 			litterSequence: litter.litterSequence,
 			mother: litter.mother.name,
 			father: litter.father?.name || 'Unbekannt',
-			breeder: `${litter.breeder.firstName} ${litter.breeder.lastName}`,
-			breederKennelName: litter.breeder.kennelName,
-			location: litter.location,
+			// Züchterin ist die Besitzerin der Mutterhündin
+			breeder: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+			breederKennelName: litter.mother.owner.kennelName,
+			location: litter.location || (litter.mother.owner.postalCode ? `${litter.mother.owner.city}, ${litter.mother.owner.postalCode}` : `${litter.mother.owner.city}, ${litter.mother.owner.country}`),
 			status: litter.status,
 			price: litter.price,
-			date: litter.actualDate ? formatDate(litter.actualDate) : formatDate(litter.expectedDate),
+		date: litter.actualDate ? formatDate(litter.actualDate) : (litter.expectedDate ? formatDate(litter.expectedDate) : ''),
 			expectedDate: litter.expectedDate?.toISOString().split('T')[0],
 			actualDate: litter.actualDate?.toISOString().split('T')[0],
 			expectedPuppies: litter.expectedPuppies,
@@ -278,8 +278,8 @@ router.get('/:id', async (req, res) => {
 			availablePuppies: litter.actualPuppies || 0,
 			contact: litter.contactInfo?.split(',')[0] || '',
 			phone: litter.contactInfo?.split(',')[1]?.trim() || '',
-			website: litter.website,
-			imageUrl: litter.imageUrl,
+		website: (litter as any).website,
+		imageUrl: (litter as any).imageUrl,
 			motherId: litter.motherId,
 			fatherId: litter.fatherId,
 			// Besitzer-Informationen
@@ -293,22 +293,22 @@ router.get('/:id', async (req, res) => {
 				id: litter.father.owner.id,
 				imageUrl: litter.father.owner.avatarUrl
 			} : null,
-			// Züchter-Informationen
+			// Züchter-Informationen: Besitzerin der Mutterhündin
 			motherBreeder: {
-				name: `${litter.mother.breeder.firstName} ${litter.mother.breeder.lastName}`,
-				id: litter.mother.breeder.id,
-				imageUrl: litter.mother.breeder.avatarUrl,
-				kennelName: litter.mother.breeder.kennelName
+				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
+				id: litter.mother.owner.id,
+				imageUrl: litter.mother.owner.avatarUrl,
+				kennelName: litter.mother.owner.kennelName
 			},
 			fatherBreeder: litter.father ? {
-				name: `${litter.father.breeder.firstName} ${litter.father.breeder.lastName}`,
-				id: litter.father.breeder.id,
-				imageUrl: litter.father.breeder.avatarUrl,
-				kennelName: litter.father.breeder.kennelName
+				name: `${litter.father.owner.firstName} ${litter.father.owner.lastName}`,
+				id: litter.father.owner.id,
+				imageUrl: litter.father.owner.avatarUrl,
+				kennelName: litter.father.owner.kennelName
 			} : null,
 			// Hauptbilder der Elterntiere
-			motherImageUrl: litter.mother.imageUrl,
-			fatherImageUrl: litter.father?.imageUrl,
+		motherImageUrl: (litter.mother as any).imageUrl,
+		fatherImageUrl: (litter.father as any)?.imageUrl,
 			// Auszeichnungen
 			motherAwards: litter.mother.awards.map(award => ({
 				code: award.code,
@@ -347,8 +347,17 @@ router.post('/', async (req, res) => {
 	try {
 		const validatedData = createLitterSchema.parse(req.body)
 
+		// breederId automatisch von der Besitzerin der Mutter setzen
+		const mother = await prisma.dog.findUnique({
+			where: { id: validatedData.motherId },
+			include: { owner: true }
+		})
+		if (!mother) {
+			return res.status(400).json({ success: false, error: 'Mutter nicht gefunden' })
+		}
+
 		const litter = await prisma.litter.create({
-			data: validatedData,
+			data: { ...validatedData, breederId: mother.owner.id },
 			include: {
 				mother: true,
 				father: true,
@@ -383,9 +392,19 @@ router.put('/:id', async (req, res) => {
 		const { id } = req.params
 		const validatedData = updateLitterSchema.parse(req.body)
 
+		let dataToUpdate: any = { ...validatedData }
+		if (validatedData.litterNumber || validatedData.status || validatedData.expectedDate || validatedData.actualDate) {
+			// Wenn motherId im Update enthalten wäre, müsste breederId neu abgeleitet werden
+		}
+		if ((validatedData as any).motherId) {
+			const mother = await prisma.dog.findUnique({ where: { id: (validatedData as any).motherId }, include: { owner: true } })
+			if (!mother) return res.status(400).json({ success: false, error: 'Mutter nicht gefunden' })
+			dataToUpdate.breederId = mother.owner.id
+		}
+
 		const litter = await prisma.litter.update({
 			where: { id },
-			data: validatedData,
+			data: dataToUpdate,
 			include: {
 				mother: true,
 				father: true,

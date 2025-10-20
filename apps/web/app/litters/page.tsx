@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import 'leaflet/dist/leaflet.css'
 import { formatDate } from '../../../../packages/shared/src/utils'
 
 // Status-Farben für Würfe
@@ -25,103 +26,93 @@ const getStatusColor = (status: string) => {
 function SimpleMap({ litters }: { litters: any[] }) {
 	const mapRef = useRef<HTMLDivElement>(null)
 	const mapInstanceRef = useRef<any>(null)
+	const markersLayerRef = useRef<any>(null)
 	const [isClient, setIsClient] = useState(false)
 
-	// PLZ-basierte Koordinaten-Lookup
-	const getCoordinatesByLocation = (location: string): [number, number] => {
-		const locationCoordinates: { [key: string]: [number, number] } = {
-			// München
-			'München': [48.1351, 11.5820],
-			'München, Bayern': [48.1351, 11.5820],
-			// Hamburg
-			'Hamburg': [53.5511, 9.9937],
-			'Hamburg, Hamburg': [53.5511, 9.9937],
-			// Köln
-			'Köln': [50.9375, 6.9603],
-			'Köln, Nordrhein-Westfalen': [50.9375, 6.9603],
-			// Stuttgart
-			'Stuttgart': [48.7758, 9.1829],
-			'Stuttgart, Baden-Württemberg': [48.7758, 9.1829],
-		}
+    const extractPostalCode = (text?: string): string | null => {
+        if (!text) return null
+        const match = text.match(/\b\d{5}\b/)
+        return match ? match[0] : null
+    }
 
-		// Versuche exakte Übereinstimmung
-		if (locationCoordinates[location]) {
-			return locationCoordinates[location]
-		}
-
-		// Fallback: Suche nach Teilstring
-		for (const [key, coords] of Object.entries(locationCoordinates)) {
-			if (location.includes(key)) {
-				return coords
-			}
-		}
-
-		// Default: Deutschland-Zentrum
-		return [51.1657, 10.4515]
-	}
+    const geocodeByPostalAndCity = async (postalCode?: string, city?: string): Promise<[number, number] | null> => {
+        try {
+            let query = 'country=Germany'
+            if (postalCode) query += `&postalcode=${encodeURIComponent(postalCode)}`
+            if (city) query += `&city=${encodeURIComponent(city)}`
+            const url = `https://nominatim.openstreetmap.org/search?${query}&format=json&limit=1`
+            const res = await fetch(url, { headers: { 'Accept-Language': 'de' } })
+            const data = await res.json()
+            if (data && data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)]
+            }
+            return null
+        } catch (e) {
+            console.error('Geocoding error (litters map):', e)
+            return null
+        }
+    }
 
 	useEffect(() => {
 		setIsClient(true)
 	}, [])
 
 	useEffect(() => {
-		if (!isClient || !mapRef.current || litters.length === 0) return
+		if (!isClient || !mapRef.current) return
 
-		// Dynamisches Import von Leaflet
-		const initMap = async () => {
-			const L = await import('leaflet')
-			// CSS wird über globals.css geladen
+		const setup = async () => {
+			const L = (await import('leaflet')).default
 
-			// Karte initialisieren
-			const map = L.map(mapRef.current!).setView([51.1657, 10.4515], 6)
-
-			// OpenStreetMap Tile Layer hinzufügen
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '© OpenStreetMap contributors'
-			}).addTo(map)
-
-			// Marker für jeden Wurf hinzufügen
-			litters.forEach((litter) => {
-				const coords = getCoordinatesByLocation(litter.location)
-				const marker = L.marker(coords).addTo(map)
-
-				// Popup mit Wurf-Informationen
-				const popupContent = `
-					<div class="p-2">
-						<h3 class="font-semibold text-gray-900 mb-1">Wurf ${litter.litterNumber}</h3>
-						<p class="text-sm text-gray-600 mb-1">${litter.litterSequence}</p>
-						<p class="text-sm text-gray-600 mb-1">${litter.mother} × ${litter.father}</p>
-						<p class="text-sm text-gray-600 mb-1">Züchter: ${litter.breeder}</p>
-						${litter.breederKennelName ? `<p class="text-sm text-gray-500 italic">${litter.breederKennelName}</p>` : ''}
-						<p class="text-sm text-gray-600">${litter.location}</p>
-						<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(litter.status)}">${litter.status}</span>
-					</div>
-				`
-				marker.bindPopup(popupContent)
-			})
-
-			// Karte an Marker anpassen
-			if (litters.length > 0) {
-				const group = L.featureGroup()
-				litters.forEach((litter) => {
-					const coords = getCoordinatesByLocation(litter.location)
-					group.addLayer(L.marker(coords))
-				})
-				map.fitBounds(group.getBounds().pad(0.1))
+			// Map nur einmal initialisieren
+			if (!mapInstanceRef.current && mapRef.current) {
+				// evtl. Marker vom Container entfernen
+				if ((mapRef.current as any)?._leaflet_id) {
+					(mapRef.current as any)._leaflet_id = null
+				}
+				mapInstanceRef.current = L.map(mapRef.current as unknown as HTMLElement).setView([51.1657, 10.4515], 6)
+				L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					attribution: '© OpenStreetMap contributors'
+				}).addTo(mapInstanceRef.current)
+				markersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current)
 			}
 
-			mapInstanceRef.current = map
-		}
-
-		initMap()
-
-		// Cleanup
-		return () => {
-			if (mapInstanceRef.current) {
-				mapInstanceRef.current.remove()
-				mapInstanceRef.current = null
+			// Marker aktualisieren
+			if (!litters.length || !markersLayerRef.current) return
+			markersLayerRef.current.clearLayers()
+			const b = L.latLngBounds([])
+			for (const litter of litters) {
+				const parts = (litter.location || '').split(',')
+				const city = (litter.breederCity || parts[0]?.trim()) as string | undefined
+				const postal = (litter.breederPostalCode || extractPostalCode(litter.location)) as string | undefined
+				const coords = await geocodeByPostalAndCity(postal, city) || [51.1657, 10.4515]
+				const hasAvailable = (litter.availablePuppies || 0) > 0
+				const isPlanned = String(litter.status).toUpperCase() === 'PLANNED'
+				const isBorn = String(litter.status).toUpperCase() === 'BORN' || String(litter.status).toUpperCase() === 'AVAILABLE'
+				const color = isPlanned ? '#2563eb' : (isBorn && hasAvailable ? '#10b981' : '#9ca3af')
+				const fill = isPlanned ? '#3b82f6' : (isBorn && hasAvailable ? '#34d399' : '#9ca3af')
+				const marker = L.circleMarker(coords as any, { radius: 7, color, weight: 2, fillColor: fill, fillOpacity: 0.9 })
+					.bindPopup(`
+						<div class="p-2">
+							<h3 class="font-semibold text-gray-900 mb-1">Wurf ${litter.litterNumber}</h3>
+							<p class="text-sm text-gray-600 mb-1">${litter.litterSequence}</p>
+							<p class="text-sm text-gray-600 mb-1">${litter.mother} × ${litter.father}</p>
+							<p class="text-sm text-gray-600 mb-1">Züchter: ${litter.breeder}</p>
+							${litter.breederKennelName ? `<p class="text-sm text-gray-500 italic">${litter.breederKennelName}</p>` : ''}
+							<p class="text-sm text-gray-600">${litter.location}</p>
+							<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(litter.status)}">${litter.status}</span>
+						</div>
+					`)
+				marker.addTo(markersLayerRef.current)
+				b.extend(coords as any)
+			}
+			if (b.isValid()) {
+				mapInstanceRef.current.fitBounds(b.pad(0.1))
+			} else {
+				mapInstanceRef.current.setView([51.1657, 10.4515], 6)
 			}
 		}
+
+		setup()
 	}, [isClient, litters])
 
 	if (!isClient) {
@@ -153,7 +144,8 @@ export default function LittersPage() {
 	useEffect(() => {
 		const fetchLitters = async () => {
 			try {
-				const response = await fetch('/api/litters')
+				const apiUrl = 'http://localhost:3001'
+				const response = await fetch(`${apiUrl}/api/litters`)
 				if (response.ok) {
 					const data = await response.json()
 					setLitters(data)
@@ -356,9 +348,9 @@ export default function LittersPage() {
 				{viewMode === 'list' && (
 					<div className="space-y-6">
 						{filteredLitters.map((litter) => (
-							<div key={litter.id} className="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300">
-								<div className="p-6">
-									<div className="flex items-start justify-between mb-4">
+					<div key={litter.id} className="bg-white shadow-lg rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-300">
+						<div className="p-6">
+							<div className="flex items-start justify-between mb-4">
 										<div className="flex items-start space-x-4">
 											<div className="flex-shrink-0">
 												{litter.imageUrl && (
@@ -369,16 +361,16 @@ export default function LittersPage() {
 													/>
 												)}
 											</div>
-											<div>
+								<div>
 												<div className="flex items-center space-x-2 mb-1">
 													<h3 className="text-xl font-semibold text-gray-900">
-														Wurf {litter.litterNumber}
+										Wurf {litter.litterNumber}
 														{litter.litterSequence && (
 															<span className="ml-2 text-sm font-normal text-gray-600">
 																({litter.litterSequence})
 															</span>
 														)}
-													</h3>
+									</h3>
 													{/* Website-Link */}
 													{litter.website && (
 														<a
@@ -394,69 +386,69 @@ export default function LittersPage() {
 														</a>
 													)}
 												</div>
-												<div className="flex items-center space-x-4 text-sm text-gray-600">
-													<span className="flex items-center">
-														<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-														</svg>
+									<div className="flex items-center space-x-4 text-sm text-gray-600">
+										<span className="flex items-center">
+											<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+											</svg>
 														{formatDate(new Date(litter.actualDate || litter.expectedDate))}
-													</span>
-													<span className="flex items-center">
-														<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-														</svg>
-														{litter.location}
-													</span>
+										</span>
+										<span className="flex items-center">
+											<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+											</svg>
+											{litter.location}
+										</span>
 												</div>
-											</div>
-										</div>
-										<div className="flex flex-col items-end space-y-2">
-											<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(litter.status)}`}>
-												{litter.status}
-											</span>
+									</div>
+								</div>
+								<div className="flex flex-col items-end space-y-2">
+									<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(litter.status)}`}>
+										{litter.status}
+									</span>
 											<span className="text-lg font-semibold text-gray-900">€{litter.price}</span>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+										<div className="space-y-6">
+								<div>
+									<h4 className="font-medium text-gray-900 mb-2">Elterntiere</h4>
+									<div className="space-y-1 text-sm">
+										<div className="flex items-center">
+											<span className="w-2 h-2 bg-pink-400 rounded-full mr-2"></span>
+											<span className="font-medium">Mutter:</span>
+											<span className="ml-2 text-gray-600">{litter.mother}</span>
+										</div>
+										<div className="flex items-center">
+											<span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+											<span className="font-medium">Vater:</span>
+											<span className="ml-2 text-gray-600">{litter.father}</span>
 										</div>
 									</div>
-
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-										<div className="space-y-6">
-											<div>
-												<h4 className="font-medium text-gray-900 mb-2">Elterntiere</h4>
-												<div className="space-y-1 text-sm">
-													<div className="flex items-center">
-														<span className="w-2 h-2 bg-pink-400 rounded-full mr-2"></span>
-														<span className="font-medium">Mutter:</span>
-														<span className="ml-2 text-gray-600">{litter.mother}</span>
-													</div>
-													<div className="flex items-center">
-														<span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-														<span className="font-medium">Vater:</span>
-														<span className="ml-2 text-gray-600">{litter.father}</span>
-													</div>
-												</div>
-											</div>
-											<div>
+								</div>
+								<div>
 												<h4 className="font-medium text-gray-900 mb-2">Züchter</h4>
 												<div className="text-gray-600">
 													<p>{litter.breeder}</p>
 													{litter.breederKennelName && (
 														<p className="text-sm text-gray-500 italic">{litter.breederKennelName}</p>
 													)}
-												</div>
-												<div className="mt-2 space-y-1 text-sm text-gray-600">
-													<div className="flex items-center">
-														<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-														</svg>
-														{litter.contact}
-													</div>
-													<div className="flex items-center">
-														<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-															<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-														</svg>
-														{litter.phone}
-													</div>
+							</div>
+								<div className="mt-2 space-y-1 text-sm text-gray-600">
+									<div className="flex items-center">
+										<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+										</svg>
+										{litter.contact}
+									</div>
+									<div className="flex items-center">
+										<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+										</svg>
+										{litter.phone}
+									</div>
 												</div>
 											</div>
 										</div>
@@ -504,40 +496,40 @@ export default function LittersPage() {
 													<div className="text-sm">Welpen- und Genetik-Daten werden nach der Geburt verfügbar</div>
 												</div>
 											)}
-										</div>
-									</div>
+								</div>
+							</div>
 
-									<div className="mb-6">
-										<h4 className="font-medium text-gray-900 mb-2">Beschreibung</h4>
+							<div className="mb-6">
+								<h4 className="font-medium text-gray-900 mb-2">Beschreibung</h4>
 										<p className="text-gray-600 text-sm leading-relaxed">{litter.description}</p>
-									</div>
+							</div>
 
-									<div className="flex space-x-3">
+							<div className="flex space-x-3">
 										<button
 											onClick={() => handleShowDetails(litter)}
 											className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
 										>
-											Details anzeigen
-										</button>
+									Details anzeigen
+								</button>
 										<button
 											onClick={() => handleShowPedigree(litter)}
 											className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors duration-200"
 										>
-											Abstammung anzeigen
-										</button>
-										{litter.availablePuppies > 0 && (
+									Abstammung anzeigen
+								</button>
+								{litter.availablePuppies > 0 && (
 											<button
 												onClick={() => handleContact(litter)}
 												className="flex-1 border border-green-300 text-green-700 px-4 py-2 rounded-md hover:bg-green-50 transition-colors duration-200"
 											>
-												Kontakt aufnehmen
-											</button>
-										)}
-									</div>
-								</div>
+										Kontakt aufnehmen
+									</button>
+								)}
 							</div>
-						))}
+						</div>
 					</div>
+				))}
+			</div>
 				)}
 
 				{viewMode === 'map' && (
@@ -546,6 +538,21 @@ export default function LittersPage() {
 							{filteredLitters.length} Würfe auf der Karte
 						</div>
 						<SimpleMap litters={filteredLitters} />
+						{/* Legende */}
+						<div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-700">
+							<div className="flex items-center">
+								<span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#10b981' }}></span>
+								<span>Welpen geboren & verfügbar</span>
+							</div>
+							<div className="flex items-center">
+								<span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#2563eb' }}></span>
+								<span>Wurf geplant</span>
+							</div>
+							<div className="flex items-center">
+								<span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#9ca3af' }}></span>
+								<span>Sonstige</span>
+							</div>
+						</div>
 					</div>
 				)}
 			</div>

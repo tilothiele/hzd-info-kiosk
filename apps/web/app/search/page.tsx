@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { allDogs } from './dog-data'
 import { getGenderDisplay, formatDate } from '../../../../packages/shared/src/utils'
 import {
 	MagnifyingGlassIcon,
@@ -104,12 +103,12 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 		return plzCoordinates[plz] || [51.1657, 10.4515] // Deutschland-Zentrum als Fallback
 	}
 
-	useEffect(() => {
-		// Client-Side Rendering sicherstellen
-		setIsClient(true)
-	}, [])
+    useEffect(() => {
+        // Client-Side Rendering sicherstellen
+        setIsClient(true)
+    }, [])
 
-	useEffect(() => {
+    useEffect(() => {
 		if (!isClient) return
 
 		// Dynamisches Laden von Leaflet
@@ -149,7 +148,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 
 					// Marker hinzufügen
 					dogs.forEach((dog) => {
-						const coordinates = getCoordinatesByPLZ(dog.plz)
+						const coordinates = dog.owner.coordinates || getCoordinatesByPLZ(dog.owner.postalCode)
 
 						// Custom Icon für Marker erstellen (30x30px)
 						const customIcon = L.divIcon({
@@ -178,9 +177,9 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 						marker.bindPopup(`
 							<div style="padding: 8px; min-width: 200px;">
 								<h3 style="margin: 0 0 8px 0; font-weight: bold;">${dog.name}</h3>
-								<p style="margin: 2px 0;"><strong>Besitzer:</strong> ${dog.owner}</p>
-								<p style="margin: 2px 0;"><strong>Standort:</strong> ${dog.location}</p>
-								<p style="margin: 2px 0;"><strong>PLZ:</strong> ${dog.plz}</p>
+								<p style="margin: 2px 0;"><strong>Besitzer:</strong> ${dog.owner.name}</p>
+								<p style="margin: 2px 0;"><strong>Standort:</strong> ${dog.owner.location}</p>
+								<p style="margin: 2px 0;"><strong>PLZ:</strong> ${dog.owner.postalCode}</p>
 								<p style="margin: 2px 0;"><strong>Geburtsdatum:</strong> ${formatDate(new Date(dog.birthDate))}</p>
 								<p style="margin: 2px 0;"><strong>Geschlecht:</strong> ${getGenderDisplay(dog.gender)}</p>
 								<p style="margin: 2px 0;"><strong>Farbe:</strong> ${dog.color}</p>
@@ -263,11 +262,6 @@ interface SearchFilters {
 	healthTests: boolean
 }
 
-// Verwende die importierten Hundedaten
-const dogs = allDogs
-
-// Extrahiere alle eindeutigen Besitzer
-const uniqueOwners = Array.from(new Set(dogs.map(dog => dog.owner))).sort()
 
 // Funktion zur Bestimmung des Hundetyps
 const getDogType = (dog: any) => {
@@ -288,11 +282,11 @@ const getDogType = (dog: any) => {
 			'WURF_GEPLANT': 'blue',
 			'WURF_VORHANDEN': 'purple'
 		}
-		return { 
-			type: 'breeding', 
-			label: statusLabels[dog.breedingStatus] || 'Zuchthündin', 
-			color: statusColors[dog.breedingStatus] || 'purple', 
-			icon: '♀' 
+		return {
+			type: 'breeding',
+			label: statusLabels[dog.breedingStatus] || 'Zuchthündin',
+			color: statusColors[dog.breedingStatus] || 'purple',
+			icon: '♀'
 		}
 	}
 	return null // Kein Status für normale Hunde
@@ -309,32 +303,66 @@ export default function SearchPage() {
 		healthTests: false
 	})
 	const [filteredDogs, setFilteredDogs] = useState<any[]>([])
+	const [dogs, setDogs] = useState<any[]>([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+
+	// API-URL
+	const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+	// Extrahiere alle eindeutigen Besitzer
+	const uniqueOwners = Array.from(new Set(dogs.map(dog => dog.owner.name))).sort()
+
+    // Hunde von der API laden
+    const fetchDogs = async () => {
+		try {
+			setLoading(true)
+			setError(null)
+			const response = await fetch(`${apiUrl}/api/dogs`)
+			if (!response.ok) {
+				throw new Error('Fehler beim Laden der Hunde')
+			}
+			const data = await response.json()
+			setDogs(data)
+			setFilteredDogs(data)
+			setTotalItems(data.length)
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Unbekannter Fehler')
+			console.error('Error fetching dogs:', err)
+		} finally {
+			setLoading(false)
+		}
+	}
+
+    // Initial-Daten laden beim Mount
+    useEffect(() => {
+        fetchDogs()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
 	// URL-Parameter beim Mount lesen und automatisch suchen
-	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			const urlParams = new URLSearchParams(window.location.search)
-			const breederParam = urlParams.get('breeder')
-			if (breederParam) {
-				const newFilters = {
-					name: '',
-					gender: '',
-					color: '',
-					stud: '',
-					owner: breederParam,
-					healthTests: false
-				}
-				setSearchFilters(newFilters)
-
-				// Automatisch die Suche ausführen
-				const results = dogs.filter(dog => dog.owner === breederParam)
-				setFilteredDogs(results)
-			} else {
-				// Wenn kein URL-Parameter vorhanden ist, alle Hunde anzeigen
-				setFilteredDogs(dogs)
-			}
-		}
-	}, [])
+    // URL-Parameter anwenden, sobald Daten da sind
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const urlParams = new URLSearchParams(window.location.search)
+        const breederParam = urlParams.get('breeder')
+        if (breederParam) {
+            setSearchFilters({
+                name: '',
+                gender: '',
+                color: '',
+                stud: '',
+                owner: breederParam,
+                healthTests: false
+            })
+            const results = dogs.filter(dog => dog.owner.name === breederParam)
+            setFilteredDogs(results)
+            setTotalItems(results.length)
+        } else {
+            setFilteredDogs(dogs)
+            setTotalItems(dogs.length)
+        }
+    }, [dogs])
 	const [showToast, setShowToast] = useState(false)
 	const [toastMessage, setToastMessage] = useState('')
 
@@ -346,7 +374,7 @@ export default function SearchPage() {
 	// Paginierung State
 	const [currentPage, setCurrentPage] = useState(1)
 	const [itemsPerPage, setItemsPerPage] = useState(10)
-	const [totalItems, setTotalItems] = useState(110) // 110 Hunde
+	const [totalItems, setTotalItems] = useState(0)
 
 	const showToastMessage = (message: string) => {
 		setToastMessage(message)
@@ -397,7 +425,7 @@ export default function SearchPage() {
 			}
 
 			// Besitzer-Filter
-			if (searchFilters.owner && dog.owner !== searchFilters.owner) {
+			if (searchFilters.owner && dog.owner.name !== searchFilters.owner) {
 				return false
 			}
 
@@ -571,7 +599,36 @@ export default function SearchPage() {
 					</div>
 
 					{/* Tabellenansicht */}
-					{viewMode === 'table' && (
+					{loading && (
+						<div className="flex justify-center items-center py-12">
+							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+							<span className="ml-3 text-gray-600">Hunde werden geladen...</span>
+						</div>
+					)}
+
+					{error && (
+						<div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+							<div className="flex">
+								<ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+								<div className="ml-3">
+									<h3 className="text-sm font-medium text-red-800">Fehler beim Laden der Hunde</h3>
+									<div className="mt-2 text-sm text-red-700">
+										<p>{error}</p>
+									</div>
+									<div className="mt-4">
+										<button
+											onClick={fetchDogs}
+											className="bg-red-100 px-3 py-2 rounded-md text-sm font-medium text-red-800 hover:bg-red-200"
+										>
+											Erneut versuchen
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{!loading && !error && viewMode === 'table' && (
 						<div className="overflow-x-auto">
 							<table className="min-w-full divide-y divide-gray-200">
 								<thead className="bg-gray-50">
@@ -618,7 +675,7 @@ export default function SearchPage() {
 												<div className="flex-shrink-0 h-16 w-16">
 													<img
 														className="h-16 w-16 rounded-lg object-cover border border-gray-200"
-														src={dog.mainImage}
+														src={dog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop&crop=face'}
 														alt={`${dog.name} - Hauptbild`}
 													/>
 												</div>
@@ -637,7 +694,7 @@ export default function SearchPage() {
 												{dog.color}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-												{dog.owner}
+												{dog.owner.name}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{dog.website ? (
@@ -659,7 +716,7 @@ export default function SearchPage() {
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												<div className="flex items-center">
 													<MapPinIcon className="h-4 w-4 text-gray-400 mr-1" />
-													{dog.location}
+													{dog.owner.location}
 												</div>
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap">
@@ -719,7 +776,7 @@ export default function SearchPage() {
 					)}
 
 					{/* Map View */}
-					{viewMode === 'map' && (
+					{!loading && !error && viewMode === 'map' && (
 						<div className="bg-white shadow-lg rounded-xl overflow-hidden">
 							<div className="p-6 border-b border-gray-200">
 								<div className="flex items-center">
@@ -871,9 +928,9 @@ export default function SearchPage() {
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 									{/* Hauptbild */}
 									<div>
-										<img
+                                    <img
 											className="w-full h-64 object-cover rounded-lg border border-gray-200"
-											src={selectedDog.mainImage}
+                                            src={selectedDog.imageUrl || 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=500&fit=crop&crop=face'}
 											alt={`${selectedDog.name} - Hauptbild`}
 										/>
 									</div>
@@ -894,11 +951,11 @@ export default function SearchPage() {
 
 										<div>
 											<h4 className="font-semibold text-gray-900">Besitzer</h4>
-											<div className="mt-2 space-y-2 text-sm">
-												<div><strong>Name:</strong> {selectedDog.owner}</div>
-												<div><strong>Standort:</strong> {selectedDog.location}</div>
-												<div><strong>PLZ:</strong> {selectedDog.plz}</div>
-											</div>
+                                            <div className="mt-2 space-y-2 text-sm">
+                                                <div><strong>Name:</strong> {selectedDog.owner?.name}</div>
+                                                <div><strong>Standort:</strong> {selectedDog.owner?.location}</div>
+                                                <div><strong>PLZ:</strong> {selectedDog.owner?.postalCode}</div>
+                                            </div>
 										</div>
 
 										{(() => {
@@ -980,9 +1037,9 @@ export default function SearchPage() {
 						<div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 							<div className="mt-3">
 								<div className="flex items-center justify-between mb-4">
-									<h3 className="text-lg font-medium text-gray-900">
-										Kontakt: {selectedDog.owner}
-									</h3>
+                                    <h3 className="text-lg font-medium text-gray-900">
+                                        Kontakt: {selectedDog.owner?.name}
+                                    </h3>
 									<button
 										onClick={closeModals}
 										className="text-gray-400 hover:text-gray-600"
@@ -1009,7 +1066,7 @@ export default function SearchPage() {
 											Besitzer
 										</label>
 										<div className="p-3 bg-gray-50 rounded-md">
-											<span className="text-gray-700">{selectedDog.owner}</span>
+                                        <span className="text-gray-700">{selectedDog.owner?.name}</span>
 										</div>
 									</div>
 
@@ -1018,8 +1075,8 @@ export default function SearchPage() {
 											Standort
 										</label>
 										<div className="p-3 bg-gray-50 rounded-md">
-											<span className="text-gray-700">{selectedDog.location}</span>
-											<div className="text-xs text-gray-500 mt-1">PLZ: {selectedDog.plz}</div>
+                                        <span className="text-gray-700">{selectedDog.owner?.location}</span>
+                                        <div className="text-xs text-gray-500 mt-1">PLZ: {selectedDog.owner?.postalCode}</div>
 										</div>
 									</div>
 

@@ -13,8 +13,6 @@ export interface User {
   postalCode?: string
   city?: string
   country: string
-  latitude?: number
-  longitude?: number
   website?: string
   kennelName?: string  // Zwingername - nur für Züchter
   isActive: boolean
