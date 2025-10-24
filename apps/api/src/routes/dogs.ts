@@ -122,7 +122,6 @@ router.get('/', async (req, res) => {
 			isStudAvailable: dog.isStudAvailable,
 			breedingStatus: dog.breedingStatus,
 			website: dog.website,
-			imageUrl: dog.imageUrl,
 			litterNumber: dog.litterNumber,
 			owner: {
 				id: dog.owner.id,
@@ -256,7 +255,6 @@ router.get('/:id', async (req, res) => {
 			isStudAvailable: dog.isStudAvailable,
 			breedingStatus: dog.breedingStatus,
 			website: dog.website,
-			imageUrl: dog.imageUrl,
 			litterNumber: dog.litterNumber,
 			owner: {
 				id: dog.owner.id,
@@ -274,7 +272,7 @@ router.get('/:id', async (req, res) => {
 				birthDate: dog.mother.birthDate,
 				color: dog.mother.color,
 				pedigreeNumber: dog.mother.pedigreeNumber,
-				imageUrl: dog.mother.imageUrl,
+				avatarUrl: dog.mother.avatarUrl,
 				owner: {
 					id: dog.mother.owner.id,
 					name: `${dog.mother.owner.firstName} ${dog.mother.owner.lastName}`,
@@ -294,7 +292,7 @@ router.get('/:id', async (req, res) => {
 				birthDate: dog.father.birthDate,
 				color: dog.father.color,
 				pedigreeNumber: dog.father.pedigreeNumber,
-				imageUrl: dog.father.imageUrl,
+				avatarUrl: dog.father.avatarUrl,
 				owner: {
 					id: dog.father.owner.id,
 					name: `${dog.father.owner.firstName} ${dog.father.owner.lastName}`,

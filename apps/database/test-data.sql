@@ -65,7 +65,7 @@ WITH d AS (
     'DE' || LPAD(i::text, 15, '0') AS "microchipId",
     'HZD-' || LPAD(i::text, 4, '0') AS "pedigreeNumber",
     'https://picsum.photos/seed/dog' || i::text || '/300/300' AS "avatarUrl",
-    (SELECT id FROM "users" ORDER BY id LIMIT 1 OFFSET ((i-1) % 80)) AS "ownerId",
+    (SELECT id FROM "users" ORDER BY id LIMIT 1 OFFSET ((i-1) % 80)) AS "xownerId",
     CASE WHEN i <= 15 THEN 'WURF_VORHANDEN' ELSE NULL END AS "breedingStatus",
     CASE WHEN i > 55 AND i <= 65 THEN TRUE ELSE FALSE END AS "isStudAvailable",
     'https://example.com/dog/' || i::text AS website,
@@ -75,7 +75,7 @@ WITH d AS (
   FROM generate_series(1,110) AS g(i)
 )
 INSERT INTO "dogs" ("id","name","gender","birthDate","deathDate","color","microchipId","pedigreeNumber","avatarUrl","ownerId","motherId","fatherId","litterNumber","breedingStatus","website","description","createdAt","updatedAt")
-SELECT id, name, gender, "birthDate", "deathDate", color, "microchipId", "pedigreeNumber", "avatarUrl", "ownerId", NULL, NULL, NULL, "breedingStatus", website, description, "createdAt", "updatedAt"
+SELECT id, name, gender, "birthDate", "deathDate", color, "microchipId", "pedigreeNumber", "avatarUrl", "xownerId", NULL, NULL, NULL, "breedingStatus", website, description, "createdAt", "updatedAt"
 FROM d;
 
 -- 4) Rollen zuweisen
@@ -115,7 +115,12 @@ WITH mothers AS (
     (DATE '2025-06-01' + ((i*7) || ' days')::interval) AS "plannedDate",
     (DATE '2025-07-01' + ((i*7) || ' days')::interval) AS "expectedDate",
     CASE WHEN i % 2 = 0 THEN (DATE '2025-07-01' + ((i*7-3) || ' days')::interval) ELSE NULL END AS "actualDate",
-    CASE WHEN i % 2 = 0 THEN 'BORN' ELSE 'PLANNED' END AS status,
+    CASE
+      WHEN i % 4 = 0 THEN 'BORN'
+      WHEN i % 4 = 1 THEN 'PLANNED'
+      WHEN i % 4 = 2 THEN 'CLOSED'
+      ELSE 'CANCELLED'
+    END AS status,
     CASE WHEN i % 2 = 0 THEN NULL ELSE 6 + (i % 3) END AS "expectedPuppies",
     CASE WHEN i % 2 = 0 THEN 5 + (i % 3) ELSE NULL END AS "actualPuppies",
     'Automatisch generierter Wurf ' || i::text AS description,
@@ -126,12 +131,69 @@ WITH mothers AS (
     CASE WHEN i % 2 = 0 THEN 7.2 + (i % 5) ELSE NULL END AS av,
     CASE WHEN i % 2 = 0 THEN 3.1 + (i % 4) ELSE NULL END AS iz,
     NULL::json AS "puppyColors",
+    -- Fellfarben-Attribute (nur für BORN und CLOSED)
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN 1 + (i % 3) ELSE NULL END AS "blackmarkenBorn",
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN (i % 2) ELSE NULL END AS "blackmarkenAvailable",
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN 1 + (i % 2) ELSE NULL END AS "blackBorn",
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN (i % 2) ELSE NULL END AS "blackAvailable",
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN 1 + (i % 2) ELSE NULL END AS "blondBorn",
+    CASE WHEN i % 4 = 0 OR i % 4 = 2 THEN (i % 2) ELSE NULL END AS "blondAvailable",
     NOW() AS "createdAt",
     NOW() AS "updatedAt"
   FROM generate_series(1,20) AS g(i)
 )
-INSERT INTO "litters" ("id","litterNumber","litterSequence","motherId","fatherId","breederId","plannedDate","expectedDate","actualDate","status","expectedPuppies","actualPuppies","description","isPublic","contactInfo","price","location","av","iz","puppyColors","createdAt","updatedAt")
+INSERT INTO "litters" ("id","litterNumber","litterSequence","motherId","fatherId","breederId","plannedDate","expectedDate","actualDate","status","expectedPuppies","actualPuppies","description","isPublic","contactInfo","price","location","av","iz","puppyColors","blackmarkenBorn","blackmarkenAvailable","blackBorn","blackAvailable","blondBorn","blondAvailable","createdAt","updatedAt")
 SELECT * FROM lit;
+
+-- Zusätzliche Würfe mit verschiedenen Status und Fellfarben
+INSERT INTO "litters" ("id","litterNumber","litterSequence","motherId","fatherId","breederId","plannedDate","expectedDate","actualDate","status","expectedPuppies","actualPuppies","description","isPublic","contactInfo","price","location","av","iz","puppyColors","blackmarkenBorn","blackmarkenAvailable","blackBorn","blackAvailable","blondBorn","blondAvailable","createdAt","updatedAt")
+VALUES
+  ('litter-021', 'W-2025-021', 'A-Wurf', (SELECT id FROM "dogs" WHERE gender = 'H' LIMIT 1), (SELECT id FROM "dogs" WHERE gender = 'R' LIMIT 1), (SELECT "ownerId" FROM "dogs" WHERE gender = 'H' LIMIT 1), '2025-08-01', '2025-09-01', '2025-08-28', 'BORN', NULL, 6, 'Wurf mit geborenen Welpen', TRUE, 'kontakt@example.com, +49 30 12345', 1500, 'Berlin', 8.5, 4.2, NULL, 2, 1, 2, 1, 2, 1, NOW(), NOW()),
+  ('litter-022', 'W-2025-022', 'B-Wurf', (SELECT id FROM "dogs" WHERE gender = 'H' LIMIT 1 OFFSET 1), (SELECT id FROM "dogs" WHERE gender = 'R' LIMIT 1 OFFSET 1), (SELECT "ownerId" FROM "dogs" WHERE gender = 'H' LIMIT 1 OFFSET 1), '2025-08-15', '2025-09-15', '2025-09-10', 'CLOSED', NULL, 5, 'Wurf mit geschlossenen Welpen', TRUE, 'kontakt2@example.com, +49 30 12346', 1400, 'München', 7.8, 3.5, NULL, 1, 0, 3, 2, 1, 0, NOW(), NOW());
+
+-- Auszeichnungen (Awards) für Hunde
+INSERT INTO "awards" ("id", "dogId", "code", "date", "description", "issuer", "createdAt", "updatedAt")
+VALUES
+  -- Auszeichnungen für die ersten 10 Hunde
+  ('award-001', (SELECT id FROM "dogs" LIMIT 1), 'V1', '2023-05-15', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-002', (SELECT id FROM "dogs" LIMIT 1), 'SG', '2023-08-20', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-003', (SELECT id FROM "dogs" LIMIT 1), 'BH', '2023-03-10', 'Begleithund', 'VDH', NOW(), NOW()),
+
+  ('award-004', (SELECT id FROM "dogs" LIMIT 1 OFFSET 1), 'V1', '2023-06-12', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-005', (SELECT id FROM "dogs" LIMIT 1 OFFSET 1), 'IPO1', '2023-09-05', 'IPO 1', 'VDH', NOW(), NOW()),
+
+  ('award-006', (SELECT id FROM "dogs" LIMIT 1 OFFSET 2), 'SG', '2023-07-18', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-007', (SELECT id FROM "dogs" LIMIT 1 OFFSET 2), 'BH', '2023-04-22', 'Begleithund', 'VDH', NOW(), NOW()),
+  ('award-008', (SELECT id FROM "dogs" LIMIT 1 OFFSET 2), 'RettHund', '2023-11-30', 'Rettungshund', 'DRK', NOW(), NOW()),
+
+  ('award-009', (SELECT id FROM "dogs" LIMIT 1 OFFSET 3), 'V1', '2023-05-08', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-010', (SELECT id FROM "dogs" LIMIT 1 OFFSET 3), 'IPO2', '2023-10-15', 'IPO 2', 'VDH', NOW(), NOW()),
+  ('award-011', (SELECT id FROM "dogs" LIMIT 1 OFFSET 3), 'SchH1', '2023-12-03', 'Schutzhund 1', 'VDH', NOW(), NOW()),
+
+  ('award-012', (SELECT id FROM "dogs" LIMIT 1 OFFSET 4), 'SG', '2023-08-14', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-013', (SELECT id FROM "dogs" LIMIT 1 OFFSET 4), 'BH', '2023-03-25', 'Begleithund', 'VDH', NOW(), NOW()),
+
+  ('award-014', (SELECT id FROM "dogs" LIMIT 1 OFFSET 5), 'V1', '2023-06-30', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-015', (SELECT id FROM "dogs" LIMIT 1 OFFSET 5), 'IPO1', '2023-09-18', 'IPO 1', 'VDH', NOW(), NOW()),
+  ('award-016', (SELECT id FROM "dogs" LIMIT 1 OFFSET 5), 'RettHund', '2023-11-12', 'Rettungshund', 'DRK', NOW(), NOW()),
+
+  ('award-017', (SELECT id FROM "dogs" LIMIT 1 OFFSET 6), 'SG', '2023-07-05', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-018', (SELECT id FROM "dogs" LIMIT 1 OFFSET 6), 'BH', '2023-04-08', 'Begleithund', 'VDH', NOW(), NOW()),
+
+  ('award-019', (SELECT id FROM "dogs" LIMIT 1 OFFSET 7), 'V1', '2023-05-22', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-020', (SELECT id FROM "dogs" LIMIT 1 OFFSET 7), 'IPO2', '2023-10-28', 'IPO 2', 'VDH', NOW(), NOW()),
+  ('award-021', (SELECT id FROM "dogs" LIMIT 1 OFFSET 7), 'SchH2', '2023-12-15', 'Schutzhund 2', 'VDH', NOW(), NOW()),
+
+  ('award-022', (SELECT id FROM "dogs" LIMIT 1 OFFSET 8), 'SG', '2023-08-02', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-023', (SELECT id FROM "dogs" LIMIT 1 OFFSET 8), 'BH', '2023-03-18', 'Begleithund', 'VDH', NOW(), NOW()),
+  ('award-024', (SELECT id FROM "dogs" LIMIT 1 OFFSET 8), 'RettHund', '2023-11-25', 'Rettungshund', 'DRK', NOW(), NOW()),
+
+  ('award-025', (SELECT id FROM "dogs" LIMIT 1 OFFSET 9), 'V1', '2023-06-08', 'Vorzüglich', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-026', (SELECT id FROM "dogs" LIMIT 1 OFFSET 9), 'IPO1', '2023-09-12', 'IPO 1', 'VDH', NOW(), NOW()),
+
+  ('award-027', (SELECT id FROM "dogs" LIMIT 1 OFFSET 10), 'SG', '2023-07-25', 'Sehr Gut', 'Hovawart Club Deutschland', NOW(), NOW()),
+  ('award-028', (SELECT id FROM "dogs" LIMIT 1 OFFSET 10), 'BH', '2023-04-15', 'Begleithund', 'VDH', NOW(), NOW()),
+  ('award-029', (SELECT id FROM "dogs" LIMIT 1 OFFSET 10), 'RettHund', '2023-11-08', 'Rettungshund', 'DRK', NOW(), NOW());
 
 COMMIT;
 

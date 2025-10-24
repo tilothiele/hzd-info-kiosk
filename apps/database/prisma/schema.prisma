@@ -245,6 +245,24 @@ model Litter {
   contactInfo     String?
   price           Decimal?
   location        String?
+  
+  // Fellfarben-Attribute nach Geschlecht (nur für BORN, CLOSED)
+  // Schwarzmarken
+  blackmarkenFemaleBorn     Int?  // Anzahl Hündinnen mit Schwarzmarken geworfen
+  blackmarkenFemaleAvailable Int? // Anzahl Hündinnen mit Schwarzmarken zu vermitteln
+  blackmarkenMaleBorn       Int?  // Anzahl Rüden mit Schwarzmarken geworfen
+  blackmarkenMaleAvailable  Int?  // Anzahl Rüden mit Schwarzmarken zu vermitteln
+  // Schwarz
+  blackFemaleBorn           Int?  // Anzahl schwarze Hündinnen geworfen
+  blackFemaleAvailable      Int?  // Anzahl schwarze Hündinnen zu vermitteln
+  blackMaleBorn             Int?  // Anzahl schwarze Rüden geworfen
+  blackMaleAvailable        Int?  // Anzahl schwarze Rüden zu vermitteln
+  // Blond
+  blondFemaleBorn           Int?  // Anzahl blonde Hündinnen geworfen
+  blondFemaleAvailable      Int?  // Anzahl blonde Hündinnen zu vermitteln
+  blondMaleBorn             Int?  // Anzahl blonde Rüden geworfen
+  blondMaleAvailable        Int?  // Anzahl blonde Rüden zu vermitteln
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

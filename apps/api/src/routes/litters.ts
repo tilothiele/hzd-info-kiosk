@@ -15,7 +15,7 @@ const createLitterSchema = z.object({
   plannedDate: z.date().optional(),
   expectedDate: z.date().optional(),
   actualDate: z.date().optional(),
-  status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).default('PLANNED'),
+  status: z.enum(['PLANNED', 'BORN', 'CLOSED', 'CANCELLED']).default('PLANNED'),
   expectedPuppies: z.number().positive().optional(),
   actualPuppies: z.number().positive().optional(),
   av: z.number().min(0).max(100).optional(),
@@ -24,7 +24,14 @@ const createLitterSchema = z.object({
   isPublic: z.boolean().default(true),
   contactInfo: z.string().optional(),
   price: z.number().positive().optional(),
-  location: z.string().optional()
+  location: z.string().optional(),
+  // Fellfarben-Attribute
+  blackmarkenBorn: z.number().min(0).optional(),
+  blackmarkenAvailable: z.number().min(0).optional(),
+  blackBorn: z.number().min(0).optional(),
+  blackAvailable: z.number().min(0).optional(),
+  blondBorn: z.number().min(0).optional(),
+  blondAvailable: z.number().min(0).optional()
 })
 
 const updateLitterSchema = z.object({
@@ -33,7 +40,7 @@ const updateLitterSchema = z.object({
   plannedDate: z.date().optional(),
   expectedDate: z.date().optional(),
   actualDate: z.date().optional(),
-  status: z.enum(['PLANNED', 'IN_PROGRESS', 'BORN', 'AVAILABLE', 'RESERVED', 'SOLD', 'CANCELLED']).optional(),
+  status: z.enum(['PLANNED', 'BORN', 'CLOSED', 'CANCELLED']).optional(),
   expectedPuppies: z.number().positive().optional(),
   actualPuppies: z.number().positive().optional(),
   av: z.number().min(0).max(100).optional(),
@@ -42,7 +49,14 @@ const updateLitterSchema = z.object({
   isPublic: z.boolean().optional(),
   contactInfo: z.string().optional(),
   price: z.number().positive().optional(),
-  location: z.string().optional()
+  location: z.string().optional(),
+  // Fellfarben-Attribute
+  blackmarkenBorn: z.number().min(0).optional(),
+  blackmarkenAvailable: z.number().min(0).optional(),
+  blackBorn: z.number().min(0).optional(),
+  blackAvailable: z.number().min(0).optional(),
+  blondBorn: z.number().min(0).optional(),
+  blondAvailable: z.number().min(0).optional()
 })
 
 // Hilfsfunktion für Datumsformatierung
@@ -68,11 +82,10 @@ router.get('/', async (req, res) => {
 		// Status-Filter
 		if (status) {
 			const statusMap: Record<string, string> = {
-				'verfügbar': 'AVAILABLE',
 				'geplant': 'PLANNED',
-				'reserviert': 'RESERVED',
-				'verkauft': 'SOLD',
-				'geboren': 'BORN'
+				'geboren': 'BORN',
+				'geschlossen': 'CLOSED',
+				'abgebrochen': 'CANCELLED'
 			}
 			where.status = statusMap[status.toString().toLowerCase()] || status.toString().toUpperCase()
 		}
@@ -172,6 +185,13 @@ router.get('/', async (req, res) => {
 			imageUrl: (litter as any).imageUrl,
 			motherId: litter.motherId,
 			fatherId: litter.fatherId,
+			// Fellfarben-Attribute
+			blackmarkenBorn: litter.blackmarkenBorn,
+			blackmarkenAvailable: litter.blackmarkenAvailable,
+			blackBorn: litter.blackBorn,
+			blackAvailable: litter.blackAvailable,
+			blondBorn: litter.blondBorn,
+			blondAvailable: litter.blondAvailable,
 			// Besitzer-Informationen
 			motherOwner: {
 				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
@@ -197,8 +217,8 @@ router.get('/', async (req, res) => {
 				kennelName: litter.father.owner.kennelName
 			} : null,
 			// Hauptbilder der Elterntiere
-			motherImageUrl: (litter.mother as any).imageUrl,
-			fatherImageUrl: (litter.father as any)?.imageUrl,
+			motherImageUrl: litter.mother.avatarUrl,
+			fatherImageUrl: litter.father?.avatarUrl,
 			// Auszeichnungen
 			motherAwards: litter.mother.awards.map(award => ({
 				code: award.code,
@@ -282,6 +302,13 @@ router.get('/:id', async (req, res) => {
 		imageUrl: (litter as any).imageUrl,
 			motherId: litter.motherId,
 			fatherId: litter.fatherId,
+			// Fellfarben-Attribute
+			blackmarkenBorn: litter.blackmarkenBorn,
+			blackmarkenAvailable: litter.blackmarkenAvailable,
+			blackBorn: litter.blackBorn,
+			blackAvailable: litter.blackAvailable,
+			blondBorn: litter.blondBorn,
+			blondAvailable: litter.blondAvailable,
 			// Besitzer-Informationen
 			motherOwner: {
 				name: `${litter.mother.owner.firstName} ${litter.mother.owner.lastName}`,
@@ -307,8 +334,8 @@ router.get('/:id', async (req, res) => {
 				kennelName: litter.father.owner.kennelName
 			} : null,
 			// Hauptbilder der Elterntiere
-		motherImageUrl: (litter.mother as any).imageUrl,
-		fatherImageUrl: (litter.father as any)?.imageUrl,
+			motherImageUrl: litter.mother.avatarUrl,
+			fatherImageUrl: litter.father?.avatarUrl,
 			// Auszeichnungen
 			motherAwards: litter.mother.awards.map(award => ({
 				code: award.code,

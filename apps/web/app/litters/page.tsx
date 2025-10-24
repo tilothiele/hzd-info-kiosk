@@ -138,7 +138,19 @@ export default function LittersPage() {
 	const [showPedigreeModal, setShowPedigreeModal] = useState(false)
 	const [showContactModal, setShowContactModal] = useState(false)
 	const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
+	
+	// Filter State
 	const [selectedBreeder, setSelectedBreeder] = useState('')
+	const [selectedStatus, setSelectedStatus] = useState('')
+	const [selectedPostalCode, setSelectedPostalCode] = useState('')
+	const [selectedDate, setSelectedDate] = useState('')
+
+	// Hilfsfunktion zum Extrahieren der PLZ
+	const extractPostalCode = (text?: string): string | null => {
+		if (!text) return null
+		const match = text.match(/\b\d{5}\b/)
+		return match ? match[0] : null
+	}
 
 	// Daten von der API laden
 	useEffect(() => {
@@ -168,26 +180,74 @@ export default function LittersPage() {
 
 	// Filterlogik
 	const filteredLitters = litters.filter(litter => {
+		// Züchter-Filter
 		if (selectedBreeder && litter.breeder !== selectedBreeder) {
 			return false
 		}
+		
+		// Status-Filter
+		if (selectedStatus) {
+			const statusMap: Record<string, string> = {
+				'geplant': 'PLANNED',
+				'geboren': 'BORN',
+				'geschlossen': 'CLOSED',
+				'abgebrochen': 'CANCELLED'
+			}
+			const expectedStatus = statusMap[selectedStatus]
+			if (expectedStatus && litter.status !== expectedStatus) {
+				return false
+			}
+		}
+		
+		// PLZ-Filter
+		if (selectedPostalCode) {
+			const postalCode = extractPostalCode(litter.location)
+			if (postalCode) {
+				const postalCodeNum = parseInt(postalCode)
+				const range = selectedPostalCode.split('..')
+				const min = parseInt(range[0])
+				const max = parseInt(range[1])
+				if (postalCodeNum < min || postalCodeNum > max) {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+		
+		// Datum-Filter
+		if (selectedDate) {
+			const litterDate = litter.actualDate || litter.expectedDate
+			if (litterDate && !litterDate.includes(selectedDate)) {
+				return false
+			}
+		}
+		
 		return true
 	})
 
+	// Filter zurücksetzen
+	const resetFilters = () => {
+		setSelectedBreeder('')
+		setSelectedStatus('')
+		setSelectedPostalCode('')
+		setSelectedDate('')
+	}
+
 	const getStatusColor = (status: string) => {
 		switch (status) {
-			case 'Verfügbar':
+			case 'Geboren':
 			case 'BORN':
 				return 'bg-green-100 text-green-800'
 			case 'Geplant':
 			case 'PLANNED':
 				return 'bg-blue-100 text-blue-800'
-			case 'Reserviert':
-			case 'RESERVED':
-				return 'bg-yellow-100 text-yellow-800'
-			case 'Verkauft':
-			case 'SOLD':
+			case 'Geschlossen':
+			case 'CLOSED':
 				return 'bg-gray-100 text-gray-800'
+			case 'Abgebrochen':
+			case 'CANCELLED':
+				return 'bg-red-100 text-red-800'
 			default:
 				return 'bg-gray-100 text-gray-800'
 		}
@@ -267,30 +327,51 @@ export default function LittersPage() {
 
 			{/* Filter */}
 			<div className="bg-white shadow rounded-lg p-6 mb-8">
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
 					<div>
 						<label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-						<select id="status" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+						<select 
+							id="status" 
+							value={selectedStatus}
+							onChange={(e) => setSelectedStatus(e.target.value)}
+							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						>
 							<option value="">Alle</option>
-							<option value="verfügbar">Verfügbar</option>
 							<option value="geplant">Geplant</option>
-							<option value="reserviert">Reserviert</option>
-							<option value="verkauft">Verkauft</option>
+							<option value="geboren">Geboren</option>
+							<option value="geschlossen">Geschlossen</option>
+							<option value="abgebrochen">Abgebrochen</option>
 						</select>
 					</div>
 					<div>
-						<label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">Bundesland</label>
-						<select id="location" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+						<label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">Postleitzahl</label>
+						<select 
+							id="postalCode" 
+							value={selectedPostalCode}
+							onChange={(e) => setSelectedPostalCode(e.target.value)}
+							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						>
 							<option value="">Alle</option>
-							<option value="bayern">Bayern</option>
-							<option value="hamburg">Hamburg</option>
-							<option value="nrw">Nordrhein-Westfalen</option>
-							<option value="bw">Baden-Württemberg</option>
+							<option value="0..9999">0..9999</option>
+							<option value="10000..19999">10000..19999</option>
+							<option value="20000..29999">20000..29999</option>
+							<option value="30000..39999">30000..39999</option>
+							<option value="40000..49999">40000..49999</option>
+							<option value="50000..59999">50000..59999</option>
+							<option value="60000..69999">60000..69999</option>
+							<option value="70000..79999">70000..79999</option>
+							<option value="80000..89999">80000..89999</option>
+							<option value="90000..99999">90000..99999</option>
 						</select>
 					</div>
 					<div>
 						<label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">Zeitraum</label>
-						<select id="date" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+						<select 
+							id="date" 
+							value={selectedDate}
+							onChange={(e) => setSelectedDate(e.target.value)}
+							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+						>
 							<option value="">Alle</option>
 							<option value="2024">2024</option>
 							<option value="2023">2023</option>
@@ -312,6 +393,30 @@ export default function LittersPage() {
 								</option>
 							))}
 						</select>
+					</div>
+				</div>
+				
+				{/* Filter-Buttons */}
+				<div className="flex justify-between items-center">
+					<div className="text-sm text-gray-600">
+						{filteredLitters.length} von {litters.length} Würfen gefunden
+					</div>
+					<div className="flex space-x-3">
+						<button
+							onClick={resetFilters}
+							className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+						>
+							Filter zurücksetzen
+						</button>
+						<button
+							onClick={() => {}} // Filter werden automatisch angewendet
+							className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors flex items-center"
+						>
+							<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							Suche
+						</button>
 					</div>
 				</div>
 			</div>
@@ -352,15 +457,6 @@ export default function LittersPage() {
 						<div className="p-6">
 							<div className="flex items-start justify-between mb-4">
 										<div className="flex items-start space-x-4">
-											<div className="flex-shrink-0">
-												{litter.imageUrl && (
-													<img
-														src={litter.imageUrl}
-														alt={`Wurf ${litter.litterNumber}`}
-														className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-													/>
-												)}
-											</div>
 								<div>
 												<div className="flex items-center space-x-2 mb-1">
 													<h3 className="text-xl font-semibold text-gray-900">
@@ -455,29 +551,79 @@ export default function LittersPage() {
 										<div>
 											<h4 className="font-medium text-gray-900 mb-2">Welpen & Genetik</h4>
 
-											{/* Welpen- und Genetik-Werte nur für BORN, RESERVED, AVAILABLE, SOLD */}
-											{['Verfügbar', 'Reserviert', 'Verkauft', 'Geboren', 'BORN', 'RESERVED', 'AVAILABLE', 'SOLD'].includes(litter.status) ? (
+											{/* Welpen- und Genetik-Werte nur für BORN und CLOSED */}
+											{['Geboren', 'Geschlossen', 'BORN', 'CLOSED'].includes(litter.status) ? (
 												<>
-													{/* Welpenfarben */}
-													{litter.puppyColors && (
-														<div className="space-y-3 mb-3">
-															{Object.entries(litter.puppyColors).map(([color, data]: [string, any]) => (
-																<div key={color} className="p-3 bg-gray-50 rounded-lg border">
-																	<div className="text-sm font-medium text-gray-700 mb-2">{color}</div>
-																	<div className="grid grid-cols-2 gap-3">
-																		<div className="text-center">
-																			<div className="text-lg font-bold text-blue-600">{data.born}</div>
-																			<div className="text-xs text-gray-600">Geboren</div>
-																		</div>
-																		<div className="text-center">
-																			<div className="text-lg font-bold text-green-600">{data.available}</div>
-																			<div className="text-xs text-gray-600">Verfügbar</div>
-																		</div>
-																	</div>
-																</div>
-															))}
+													{/* Fellfarben der Welpen - Tabellarische Form */}
+													<div className="mb-3">
+														<div className="text-sm font-medium text-gray-700 mb-2">Welpen nach Fellfarben</div>
+														<div className="overflow-hidden border border-gray-200 rounded-lg">
+															<table className="min-w-full divide-y divide-gray-200">
+																<thead className="bg-gray-50">
+																	<tr>
+																		<th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fellfarbe</th>
+																		<th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Geworfen</th>
+																		<th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Verfügbar</th>
+																	</tr>
+																</thead>
+																<tbody className="bg-white divide-y divide-gray-200">
+																	{/* Schwarzmarken */}
+																	{(litter.blackmarkenBorn || litter.blackmarkenAvailable) && (
+																		<tr>
+																			<td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+																				Schwarzmarken (SM)
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-blue-600">{litter.blackmarkenBorn || 0}</span>
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-green-600">{litter.blackmarkenAvailable || 0}</span>
+																			</td>
+																		</tr>
+																	)}
+																	
+																	{/* Schwarz */}
+																	{(litter.blackBorn || litter.blackAvailable) && (
+																		<tr>
+																			<td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+																				Schwarz (S)
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-blue-600">{litter.blackBorn || 0}</span>
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-green-600">{litter.blackAvailable || 0}</span>
+																			</td>
+																		</tr>
+																	)}
+																	
+																	{/* Blond */}
+																	{(litter.blondBorn || litter.blondAvailable) && (
+																		<tr>
+																			<td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+																				Blond (B)
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-blue-600">{litter.blondBorn || 0}</span>
+																			</td>
+																			<td className="px-3 py-2 whitespace-nowrap text-center">
+																				<span className="text-sm font-bold text-green-600">{litter.blondAvailable || 0}</span>
+																			</td>
+																		</tr>
+																	)}
+																	
+																	{/* Zeile anzeigen wenn keine Fellfarben-Daten vorhanden */}
+																	{!litter.blackmarkenBorn && !litter.blackmarkenAvailable && !litter.blackBorn && !litter.blackAvailable && !litter.blondBorn && !litter.blondAvailable && (
+																		<tr>
+																			<td colSpan={3} className="px-3 py-2 text-center text-sm text-gray-500">
+																				Keine Fellfarben-Daten verfügbar
+																			</td>
+																		</tr>
+																	)}
+																</tbody>
+															</table>
 														</div>
-													)}
+													</div>
 
 													{/* AV/IZ-Werte */}
 													<div className="grid grid-cols-2 gap-4 text-center">
@@ -718,15 +864,24 @@ export default function LittersPage() {
 										<h4 className="font-medium text-pink-900 mb-3">Mutter</h4>
 
 										{/* Hauptbild der Mutter */}
-										{selectedLitter.motherImageUrl && (
-											<div className="mb-4">
+										<div className="relative mb-4">
+											{selectedLitter.motherImageUrl ? (
 												<img
 													src={selectedLitter.motherImageUrl}
 													alt={selectedLitter.mother}
-													className="w-24 h-24 object-cover rounded-full mx-auto border-2 border-pink-200 shadow-sm"
+													className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-pink-200 shadow-lg"
 												/>
+											) : (
+												<div className="w-32 h-32 rounded-full bg-pink-100 border-4 border-pink-200 shadow-lg mx-auto flex items-center justify-center">
+													<svg className="w-16 h-16 text-pink-400" fill="currentColor" viewBox="0 0 20 20">
+														<path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+													</svg>
+												</div>
+											)}
+											<div className="absolute -bottom-1 -right-1 w-8 h-8 bg-pink-400 rounded-full border-2 border-white flex items-center justify-center">
+												<span className="text-white text-xs font-bold">♀</span>
 											</div>
-										)}
+										</div>
 
 										{/* Hundename als Link */}
 										<a
@@ -809,15 +964,24 @@ export default function LittersPage() {
 										<h4 className="font-medium text-blue-900 mb-3">Vater</h4>
 
 										{/* Hauptbild des Vaters */}
-										{selectedLitter.fatherImageUrl && (
-											<div className="mb-4">
+										<div className="relative mb-4">
+											{selectedLitter.fatherImageUrl ? (
 												<img
 													src={selectedLitter.fatherImageUrl}
 													alt={selectedLitter.father}
-													className="w-24 h-24 object-cover rounded-full mx-auto border-2 border-blue-200 shadow-sm"
+													className="w-32 h-32 object-cover rounded-full mx-auto border-4 border-blue-200 shadow-lg"
 												/>
+											) : (
+												<div className="w-32 h-32 rounded-full bg-blue-100 border-4 border-blue-200 shadow-lg mx-auto flex items-center justify-center">
+													<svg className="w-16 h-16 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+														<path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+													</svg>
+												</div>
+											)}
+											<div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-400 rounded-full border-2 border-white flex items-center justify-center">
+												<span className="text-white text-xs font-bold">♂</span>
 											</div>
-										)}
+										</div>
 
 										{/* Hundename als Link */}
 										<a

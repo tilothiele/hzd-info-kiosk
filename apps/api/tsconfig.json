@@ -4,7 +4,7 @@
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": "./src",
+//    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -19,9 +19,13 @@
       "@/routes/*": ["./src/routes/*"],
       "@/services/*": ["./src/services/*"],
       "@/models/*": ["./src/models/*"],
-      "@/middleware/*": ["./src/middleware/*"]
+      "@/middleware/*": ["./src/middleware/*"],
+      "@shared/*": ["../../packages/shared/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "../../packages/shared/src/**/*"
+  ],
   "exclude": ["node_modules", "dist", "tests"]
 }

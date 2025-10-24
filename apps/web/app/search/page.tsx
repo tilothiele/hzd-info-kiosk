@@ -184,17 +184,45 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 								<p style="margin: 2px 0;"><strong>Geschlecht:</strong> ${getGenderDisplay(dog.gender)}</p>
 								<p style="margin: 2px 0;"><strong>Farbe:</strong> ${dog.color}</p>
 								<p style="margin: 2px 0;"><strong>Zuchtbuch:</strong> ${dog.pedigreeNumber}</p>
+								${dog.awards && dog.awards.length > 0 ? `
+									<p style="margin: 2px 0;"><strong>Auszeichnungen:</strong> ${dog.awards.map(award => award.code).join(', ')}</p>
+								` : ''}
 								${(() => {
 									const dogType = getDogType(dog)
 									if (!dogType) return ''
 									return `<p style="margin: 2px 0; color: ${dogType.color === 'green' ? 'green' : 'purple'}; font-weight: bold;">${dogType.icon} ${dogType.label}</p>`
 								})()}
 								<div style="margin-top: 8px;">
-									<button style="background: #2563eb; color: white; border: none; padding: 4px 8px; margin-right: 4px; border-radius: 4px; cursor: pointer;">Details</button>
-									<button style="background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Kontakt</button>
+									<button id="details-btn-${dog.id}" style="background: #2563eb; color: white; border: none; padding: 4px 8px; margin-right: 4px; border-radius: 4px; cursor: pointer;">Details</button>
+									<button id="contact-btn-${dog.id}" style="background: #6b7280; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Kontakt</button>
 								</div>
 							</div>
 						`)
+
+						// Event-Listener für Popup-Buttons hinzufügen
+						marker.on('popupopen', () => {
+							// Details-Button Event-Listener
+							const detailsBtn = document.getElementById(`details-btn-${dog.id}`)
+							if (detailsBtn) {
+								detailsBtn.addEventListener('click', (e) => {
+									e.preventDefault()
+									e.stopPropagation()
+									// React State aktualisieren
+									window.dispatchEvent(new CustomEvent('showDogDetails', { detail: dog }))
+								})
+							}
+
+							// Kontakt-Button Event-Listener
+							const contactBtn = document.getElementById(`contact-btn-${dog.id}`)
+							if (contactBtn) {
+								contactBtn.addEventListener('click', (e) => {
+									e.preventDefault()
+									e.stopPropagation()
+									// React State aktualisieren
+									window.dispatchEvent(new CustomEvent('showContactModal', { detail: dog }))
+								})
+							}
+						})
 					})
 				}
 			}
@@ -375,6 +403,25 @@ export default function SearchPage() {
 	const [currentPage, setCurrentPage] = useState(1)
 	const [itemsPerPage, setItemsPerPage] = useState(10)
 	const [totalItems, setTotalItems] = useState(0)
+
+	// Event-Listener für Karten-Popup-Buttons
+	useEffect(() => {
+		const handleShowDogDetails = (event: any) => {
+			handleDogDetails(event.detail)
+		}
+
+		const handleShowContactModal = (event: any) => {
+			handleContact(event.detail)
+		}
+
+		window.addEventListener('showDogDetails', handleShowDogDetails)
+		window.addEventListener('showContactModal', handleShowContactModal)
+
+		return () => {
+			window.removeEventListener('showDogDetails', handleShowDogDetails)
+			window.removeEventListener('showContactModal', handleShowContactModal)
+		}
+	}, [])
 
 	const showToastMessage = (message: string) => {
 		setToastMessage(message)
@@ -649,6 +696,9 @@ export default function SearchPage() {
 											Farbe
 										</th>
 										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+											Auszeichnungen
+										</th>
+										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 											Besitzer
 										</th>
 										<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -692,6 +742,28 @@ export default function SearchPage() {
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{dog.color}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap">
+												{dog.awards && dog.awards.length > 0 ? (
+													<div className="flex flex-wrap gap-1">
+														{dog.awards.slice(0, 3).map((award: any, index: number) => (
+															<span
+																key={index}
+																className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+																title={award.description}
+															>
+																{award.code}
+															</span>
+														))}
+														{dog.awards.length > 3 && (
+															<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+																+{dog.awards.length - 3}
+															</span>
+														)}
+													</div>
+												) : (
+													<span className="text-gray-400 text-sm">-</span>
+												)}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 												{dog.owner.name}
@@ -948,6 +1020,38 @@ export default function SearchPage() {
 												<div><strong>Mikrochip:</strong> {selectedDog.microchipId}</div>
 											</div>
 										</div>
+
+										{/* Auszeichnungen */}
+										{selectedDog.awards && selectedDog.awards.length > 0 && (
+											<div>
+												<h4 className="font-semibold text-gray-900">Auszeichnungen</h4>
+												<div className="mt-2 flex flex-wrap gap-2">
+													{selectedDog.awards.map((award: any, index: number) => (
+														<div
+															key={index}
+															className="inline-flex flex-col items-start px-3 py-2 rounded-lg bg-blue-50 border border-blue-200"
+														>
+															<span className="text-sm font-medium text-blue-800">
+																{award.code}
+															</span>
+															<span className="text-xs text-blue-600">
+																{award.description}
+															</span>
+															{award.date && (
+																<span className="text-xs text-blue-500">
+																	{formatDate(new Date(award.date))}
+																</span>
+															)}
+															{award.issuer && (
+																<span className="text-xs text-blue-500">
+																	{award.issuer}
+																</span>
+															)}
+														</div>
+													))}
+												</div>
+											</div>
+										)}
 
 										<div>
 											<h4 className="font-semibold text-gray-900">Besitzer</h4>
