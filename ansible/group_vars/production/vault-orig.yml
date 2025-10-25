@@ -1,0 +1,19 @@
+---
+# Ansible Vault encrypted variables
+# Create this file with: ansible-vault create group_vars/production/vault.yml
+# Edit with: ansible-vault edit group_vars/production/vault.yml
+
+# Docker Hub
+vault_dockerhub_user: tilothiele
+
+# Database
+vault_postgres_db: hovawart_db
+vault_postgres_user: postgres
+vault_postgres_password: hovawart_db
+
+# JWT
+vault_jwt_secret: S8YMs5NvAFMGVzhfHZ6qGGMlwjUmJ0Qe3V7n3s9YdySX1k74D9
+
+# Public URLs
+vault_public_api_url: https://api-hovawart.swingdog.home64.de
+vault_cors_origin: https://hovawart.swingdog.home64.de

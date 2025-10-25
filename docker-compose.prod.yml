@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # PostgreSQL Database (Production)
@@ -43,10 +42,7 @@ services:
 
   # API Service (Production)
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: api
+    image: ${DOCKERHUB_USER:-your-dockerhub-username}/hovawart-api:latest
     container_name: hovawart-api-prod
     environment:
       NODE_ENV: production
@@ -79,10 +75,7 @@ services:
 
   # Web Frontend (Production)
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: web
+    image: ${DOCKERHUB_USER:-your-dockerhub-username}/hovawart-web:latest
     container_name: hovawart-web-prod
     environment:
       NODE_ENV: production

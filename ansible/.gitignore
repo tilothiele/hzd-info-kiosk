@@ -1,0 +1,21 @@
+# Ansible Vault Password
+vault-password-file.sh
+
+# Retry files
+*.retry
+
+# Ansible facts cache
+ansible_facts/
+
+# SSH keys
+*.pem
+*.key
+
+# Local inventory overrides
+inventory/local.yml
+
+# Temporary files
+*.tmp
+*.bak
+*~
+

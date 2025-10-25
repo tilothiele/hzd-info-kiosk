@@ -1,0 +1,114 @@
+---
+- name: Check if Python 3 is installed
+  command: which python3
+  register: python3_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Python 3 and pip
+  apt:
+    name:
+      - python3
+      - python3-pip
+    state: present
+    update_cache: true
+  when: python3_check.rc != 0
+
+- name: Install Python Docker library
+  pip:
+    name:
+      - docker>=6.0.0
+      - requests>=2.28.0
+    state: present
+    executable: pip3
+
+- name: Remove old docker-compose Python package if exists
+  pip:
+    name: docker-compose
+    state: absent
+    executable: pip3
+  ignore_errors: true
+
+- name: Check if Docker is installed
+  command: which docker
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker if not present
+  block:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: "docker"
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Verify docker compose plugin
+      shell: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+  when: docker_check.rc != 0
+
+- name: Check if deploy user exists
+  getent:
+    database: passwd
+    key: "{{ app_user }}"
+  register: user_exists
+  failed_when: false
+
+- name: Create deploy user
+  user:
+    name: "{{ app_user }}"
+    groups: docker
+    append: true
+    shell: /bin/bash
+    create_home: yes
+    home: /home/{{ app_user }}
+  when: not user_exists.ansible_facts.getent_passwd
+
+- name: Ensure deploy user is in docker group
+  user:
+    name: "{{ app_user }}"
+    groups: docker
+    append: true
+
+- name: Check if Traefik network exists
+  shell: docker network inspect traefik_default
+  register: traefik_network
+  ignore_errors: true
+  changed_when: false
+
+- name: Get Docker version
+  shell: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Display information
+  debug:
+    msg:
+      - "Python 3: {{ ansible_python_version }}"
+      - "Docker: {{ docker_version.stdout | default('Not found') }}"
+      - "User: {{ app_user }}"
+      - "Traefik network: {{ traefik_network.rc == 0 }}"
+

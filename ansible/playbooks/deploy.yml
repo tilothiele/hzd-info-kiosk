@@ -1,0 +1,92 @@
+---
+- name: Deploy Hovawart Database to Production
+  hosts: production
+  become: true
+  vars_files:
+    - ../group_vars/production/vault.yml
+  vars:
+    app_name: hovawart
+    app_user: ansible
+    app_dir: /opt/{{ app_name }}
+    dockerhub_user: "{{ vault_dockerhub_user }}"
+
+  tasks:
+    - name: Include prerequisites
+      include_tasks: tasks/prerequisites.yml
+
+    - name: Create application directory
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/scripts"
+
+    - name: Copy application files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ app_dir }}/{{ item.dest }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0644'
+      loop:
+        - { src: "../../docker-compose.prod.yml", dest: "docker-compose.prod.yml" }
+        - { src: "../../docker-compose.traefik.yml", dest: "docker-compose.traefik.yml" }
+        - { src: "../../Dockerfile", dest: "Dockerfile" }
+        - { src: "../../env.template", dest: ".env.example" }
+
+    - name: Copy scripts
+      copy:
+        src: "{{ item }}"
+        dest: "{{ app_dir }}/scripts/{{ item | basename }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+      loop:
+        - "../../scripts/backup.sh"
+        - "../../scripts/migrate.sh"
+        - "../../scripts/deploy-prod.sh"
+
+    - name: Check if .env exists
+      stat:
+        path: "{{ app_dir }}/.env"
+      register: env_file_check
+
+    - name: Create .env from template if not exists
+      template:
+        src: env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0600'
+      when: not env_file_check.stat.exists
+
+    - name: Pull Docker images
+      shell: |
+        cd {{ app_dir }}
+        DOCKERHUB_USER={{ dockerhub_user }} docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml pull
+      become_user: "{{ app_user }}"
+
+    - name: Start services
+      shell: |
+        cd {{ app_dir }}
+        DOCKERHUB_USER={{ dockerhub_user }} docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml up -d
+      become_user: "{{ app_user }}"
+
+    - name: Wait for services to be healthy
+      wait_for:
+        timeout: 60
+      delegate_to: localhost
+
+    - name: Check service status
+      shell: |
+        cd {{ app_dir }} && docker compose -f docker-compose.prod.yml -f docker-compose.traefik.yml ps
+      register: service_status
+      changed_when: false
+
+    - name: Display service status
+      debug:
+        var: service_status.stdout_lines

@@ -95,10 +95,10 @@ export default function BreederMap({ breeders }: BreederMapProps) {
 		const initMap = async () => {
 			const L = (await import('leaflet')).default
 
-			if (cancelled) return
+					if (cancelled) return
 
-			if (!mapInstanceRef.current) {
-				mapInstanceRef.current = L.map(mapContainerRef.current).setView([51.1657, 10.4515], 6)
+		if (!mapInstanceRef.current && mapContainerRef.current) {
+			mapInstanceRef.current = L.map(mapContainerRef.current).setView([51.1657, 10.4515], 6)
 				L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 					attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 					maxZoom: 19,

@@ -180,22 +180,10 @@ make logs-db
 
 ### Features
 
-- **SSL/TLS Termination** - HTTPS mit Let's Encrypt
-- **Reverse Proxy** - Load Balancing zwischen Services
 - **Rate Limiting** - Schutz vor DDoS
 - **Gzip Compression** - Optimierte Performance
 - **Security Headers** - XSS, CSRF Schutz
 - **Static File Caching** - Optimierte Asset-Delivery
-
-### SSL Setup
-
-```bash
-# SSL Zertifikate erstellen
-mkdir -p nginx/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/ssl/key.pem \
-  -out nginx/ssl/cert.pem
-```
 
 ## Backup & Restore
 

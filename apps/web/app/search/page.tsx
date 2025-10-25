@@ -185,7 +185,7 @@ function SimpleMap({ dogs }: { dogs: any[] }) {
 								<p style="margin: 2px 0;"><strong>Farbe:</strong> ${dog.color}</p>
 								<p style="margin: 2px 0;"><strong>Zuchtbuch:</strong> ${dog.pedigreeNumber}</p>
 								${dog.awards && dog.awards.length > 0 ? `
-									<p style="margin: 2px 0;"><strong>Auszeichnungen:</strong> ${dog.awards.map(award => award.code).join(', ')}</p>
+									<p style="margin: 2px 0;"><strong>Auszeichnungen:</strong> ${dog.awards.map((award: any) => award.code).join(', ')}</p>
 								` : ''}
 								${(() => {
 									const dogType = getDogType(dog)

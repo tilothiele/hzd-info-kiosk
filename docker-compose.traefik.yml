@@ -1,0 +1,74 @@
+
+services:
+  # API Service mit Traefik Labels
+  api:
+    # Externe Ports entfernen (nur noch intern)
+    ports: []
+    labels:
+      # Traefik grundlegende Labels
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+
+      # HTTP Router für API
+      - "traefik.http.routers.api.rule=Host(`api.hovawart.local`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+
+      # Service Definition
+      - "traefik.http.services.api.loadbalancer.server.port=3001"
+
+      # Middleware für API (optional)
+      - "traefik.http.routers.api.middlewares=api-headers"
+      - "traefik.http.middlewares.api-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.api-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+
+    networks:
+      - hovawart-network
+      - traefik_default
+
+  # Web Frontend mit Traefik Labels
+  web:
+    # Externe Ports entfernen
+    ports: []
+    labels:
+      # Traefik grundlegende Labels
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+
+      # HTTP Router für Web (Primary Domain)
+      - "traefik.http.routers.web.rule=Host(`hovawart.local`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web.priority=1"
+
+      # Alternative Domain (optional)
+      - "traefik.http.routers.web-alt.rule=Host(`www.hovawart.local`)"
+      - "traefik.http.routers.web-alt.entrypoints=websecure"
+      - "traefik.http.routers.web-alt.tls.certresolver=letsencrypt"
+
+      # Service Definition
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+
+    networks:
+      - hovawart-network
+      - traefik_default
+
+  # Nginx entfernen (nicht benötigt mit Traefik)
+  nginx:
+    profiles:
+      - disabled
+
+  # PostgreSQL mit Traefik (optional, nur für Admin-Tools)
+  postgres:
+    labels:
+      - "traefik.enable=false"  # Standardmäßig deaktiviert
+
+  # Redis mit Traefik (optional, nur für Monitoring)
+  redis:
+    labels:
+      - "traefik.enable=false"  # Standardmäßig deaktiviert
+
+# Netzwerk-Konfiguration
+networks:
+  traefik_default:
+    external: true
