@@ -102,21 +102,21 @@ services:
           memory: 256M
 
   # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: hovawart-nginx
-    ports:
-      - "8080:80"
-      - "8443:443"
-    volumes:
-      - ./nginx/nginx-simple.conf:/etc/nginx/nginx.conf
-      - ./logs/nginx:/var/log/nginx
-    depends_on:
-      - web
-      - api
-    networks:
-      - hovawart-network
-    restart: unless-stopped
+#  nginx:
+#    image: nginx:alpine
+#    container_name: hovawart-nginx
+#    ports:
+#      - "8080:80"
+#      - "8443:443"
+#    volumes:
+#      - ./nginx/nginx-simple.conf:/etc/nginx/nginx.conf
+#      - ./logs/nginx:/var/log/nginx
+#    depends_on:
+#      - web
+#      - api
+#    networks:
+#      - hovawart-network
+#    restart: unless-stopped
 
   # Database Backup Service
   backup:

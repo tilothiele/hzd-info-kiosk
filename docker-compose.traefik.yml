@@ -7,12 +7,10 @@ services:
     labels:
       # Traefik grundlegende Labels
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik_default"
 
       # HTTP Router für API
-      - "traefik.http.routers.api.rule=Host(`api.hovawart.local`)"
+      - "traefik.http.routers.api.rule=Host(`${API_DOMAIN:-api.hovawart.local}`)"
       - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
 
       # Service Definition
       - "traefik.http.services.api.loadbalancer.server.port=3001"
@@ -36,15 +34,10 @@ services:
       - "traefik.docker.network=traefik_default"
 
       # HTTP Router für Web (Primary Domain)
-      - "traefik.http.routers.web.rule=Host(`hovawart.local`)"
+      - "traefik.http.routers.web.rule=Host(`${WEB_DOMAIN:-hovawart.local}`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web.priority=1"
-
-      # Alternative Domain (optional)
-      - "traefik.http.routers.web-alt.rule=Host(`www.hovawart.local`)"
-      - "traefik.http.routers.web-alt.entrypoints=websecure"
-      - "traefik.http.routers.web-alt.tls.certresolver=letsencrypt"
 
       # Service Definition
       - "traefik.http.services.web.loadbalancer.server.port=3000"
