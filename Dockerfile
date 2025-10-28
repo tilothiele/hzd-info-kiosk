@@ -137,7 +137,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start Web App
-CMD ["inject-runtime-env.sh"]
+ENTRYPOINT ["/app/apps/web/inject-runtime-env.sh"]
 
 # Stage 7: Development
 FROM base AS development

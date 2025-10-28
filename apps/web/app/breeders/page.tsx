@@ -12,6 +12,7 @@ import {
 	ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import BreederMap from './breeder-map'
+import { getApiBase } from 'lib/api'
 
 export default function BreedersPage() {
 	const [breeders, setBreeders] = useState<any[]>([])
@@ -26,7 +27,8 @@ export default function BreedersPage() {
 	useEffect(() => {
 		const fetchBreeders = async () => {
 			try {
-				const response = await fetch('http://localhost:3001/api/breeders')
+				const apiUrl = getApiBase();
+				const response = await fetch(`${apiUrl}/api/breeders`)
 				if (response.ok) {
 					const data = await response.json()
 					setBreeders(data)

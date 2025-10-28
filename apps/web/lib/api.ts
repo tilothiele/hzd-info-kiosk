@@ -1,9 +1,13 @@
 
 export function getApiBase() {
     if (typeof window !== "undefined" && (window as any).RUNTIME_API_URL) {
-      return (window as any).RUNTIME_API_URL;
+      const rv = (window as any).RUNTIME_API_URL;
+      console.log("API Base URL from window:", rv);
+      return rv;
     }
-    return process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001";
+    const rv= process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001";
+    console.log("API Base URL:", rv);
+    return rv;
   }
 
 

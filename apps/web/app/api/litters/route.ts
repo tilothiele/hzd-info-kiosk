@@ -1,8 +1,9 @@
+import { getApiBase } from 'lib/api'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const apiUrl = process.env.API_URL || 'http://localhost:3001'
+    const apiUrl = getApiBase();
     const response = await fetch(`${apiUrl}/api/litters`, {
       headers: {
         'Content-Type': 'application/json',

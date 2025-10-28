@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { formatDate } from '../../../../packages/shared/src/utils'
+import { getApiBase } from 'lib/api'
 
 // Status-Farben für Würfe
 const getStatusColor = (status: string) => {
@@ -138,7 +139,7 @@ export default function LittersPage() {
 	const [showPedigreeModal, setShowPedigreeModal] = useState(false)
 	const [showContactModal, setShowContactModal] = useState(false)
 	const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
-	
+
 	// Filter State
 	const [selectedBreeder, setSelectedBreeder] = useState('')
 	const [selectedStatus, setSelectedStatus] = useState('')
@@ -156,7 +157,7 @@ export default function LittersPage() {
 	useEffect(() => {
 		const fetchLitters = async () => {
 			try {
-				const apiUrl = 'http://localhost:3001'
+				const apiUrl = getApiBase();
 				const response = await fetch(`${apiUrl}/api/litters`)
 				if (response.ok) {
 					const data = await response.json()
@@ -184,7 +185,7 @@ export default function LittersPage() {
 		if (selectedBreeder && litter.breeder !== selectedBreeder) {
 			return false
 		}
-		
+
 		// Status-Filter
 		if (selectedStatus) {
 			const statusMap: Record<string, string> = {
@@ -198,7 +199,7 @@ export default function LittersPage() {
 				return false
 			}
 		}
-		
+
 		// PLZ-Filter
 		if (selectedPostalCode) {
 			const postalCode = extractPostalCode(litter.location)
@@ -214,7 +215,7 @@ export default function LittersPage() {
 				return false
 			}
 		}
-		
+
 		// Datum-Filter
 		if (selectedDate) {
 			const litterDate = litter.actualDate || litter.expectedDate
@@ -222,7 +223,7 @@ export default function LittersPage() {
 				return false
 			}
 		}
-		
+
 		return true
 	})
 
@@ -330,8 +331,8 @@ export default function LittersPage() {
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
 					<div>
 						<label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-						<select 
-							id="status" 
+						<select
+							id="status"
 							value={selectedStatus}
 							onChange={(e) => setSelectedStatus(e.target.value)}
 							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -345,8 +346,8 @@ export default function LittersPage() {
 					</div>
 					<div>
 						<label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">Postleitzahl</label>
-						<select 
-							id="postalCode" 
+						<select
+							id="postalCode"
 							value={selectedPostalCode}
 							onChange={(e) => setSelectedPostalCode(e.target.value)}
 							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -366,8 +367,8 @@ export default function LittersPage() {
 					</div>
 					<div>
 						<label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">Zeitraum</label>
-						<select 
-							id="date" 
+						<select
+							id="date"
 							value={selectedDate}
 							onChange={(e) => setSelectedDate(e.target.value)}
 							className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -395,7 +396,7 @@ export default function LittersPage() {
 						</select>
 					</div>
 				</div>
-				
+
 				{/* Filter-Buttons */}
 				<div className="flex justify-between items-center">
 					<div className="text-sm text-gray-600">
@@ -581,7 +582,7 @@ export default function LittersPage() {
 																			</td>
 																		</tr>
 																	)}
-																	
+
 																	{/* Schwarz */}
 																	{(litter.blackBorn || litter.blackAvailable) && (
 																		<tr>
@@ -596,7 +597,7 @@ export default function LittersPage() {
 																			</td>
 																		</tr>
 																	)}
-																	
+
 																	{/* Blond */}
 																	{(litter.blondBorn || litter.blondAvailable) && (
 																		<tr>
@@ -611,7 +612,7 @@ export default function LittersPage() {
 																			</td>
 																		</tr>
 																	)}
-																	
+
 																	{/* Zeile anzeigen wenn keine Fellfarben-Daten vorhanden */}
 																	{!litter.blackmarkenBorn && !litter.blackmarkenAvailable && !litter.blackBorn && !litter.blackAvailable && !litter.blondBorn && !litter.blondAvailable && (
 																		<tr>

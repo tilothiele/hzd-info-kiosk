@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from './contexts/AuthContext'
 import Header from './components/Header'
-import RuntimeConfigLoader from './runtime-config-loader'
 
 
 export const metadata: Metadata = {
@@ -22,9 +21,11 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="de">
+			<head>
+				<script src="/runtime-config.js" async={false} />
+			</head>
 			<body className="min-h-screen bg-gray-50">
 				<AuthProvider>
-					<RuntimeConfigLoader />
 					<Header />
 					<main>
 						{children}
