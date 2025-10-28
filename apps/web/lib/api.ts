@@ -1,5 +1,11 @@
-// API utility functions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+export function getApiBase() {
+    if (typeof window !== "undefined" && (window as any).RUNTIME_API_URL) {
+      return (window as any).RUNTIME_API_URL;
+    }
+    return process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001";
+  }
+
 
 export interface Statistics {
   totalDogs: number
@@ -20,6 +26,7 @@ export interface Activity {
 
 export async function fetchStatistics(): Promise<Statistics> {
   try {
+    const API_BASE_URL = getApiBase();
     const response = await fetch(`${API_BASE_URL}/api/statistics`)
     if (!response.ok) {
       throw new Error('Failed to fetch statistics')
@@ -41,6 +48,7 @@ export async function fetchStatistics(): Promise<Statistics> {
 
 export async function fetchActivities(): Promise<Activity[]> {
   try {
+    const API_BASE_URL = getApiBase();
     const response = await fetch(`${API_BASE_URL}/api/activities`)
     if (!response.ok) {
       throw new Error('Failed to fetch activities')

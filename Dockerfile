@@ -108,6 +108,7 @@ COPY apps/web/next.config.js ./apps/web/
 COPY apps/web/tsconfig.json ./apps/web/
 COPY apps/web/tailwind.config.js ./apps/web/
 COPY apps/web/postcss.config.js ./apps/web/
+COPY apps/web/inject-runtime-env.sh ./apps/web/
 
 # Kopiere Shared und UI Packages
 COPY packages/shared/package*.json ./packages/shared/
@@ -136,7 +137,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start Web App
-CMD ["npm", "start"]
+CMD ["inject-runtime-env.sh"]
 
 # Stage 7: Development
 FROM base AS development

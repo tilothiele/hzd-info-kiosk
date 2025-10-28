@@ -20,6 +20,7 @@ import {
 	HeartIcon as HeartSolidIcon,
 	UserIcon as UserSolidIcon,
 } from '@heroicons/react/24/solid'
+import { getApiBase } from 'lib/api'
 
 // Map-Komponente direkt integriert
 function SimpleMap({ dogs }: { dogs: any[] }) {
@@ -336,7 +337,7 @@ export default function SearchPage() {
 	const [error, setError] = useState<string | null>(null)
 
 	// API-URL
-	const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+	const apiUrl = getApiBase();
 
 	// Extrahiere alle eindeutigen Besitzer
 	const uniqueOwners = Array.from(new Set(dogs.map(dog => dog.owner.name))).sort()
